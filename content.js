@@ -1,40 +1,22 @@
-(async function() {
+(async function () {
   const url = window.location.href;
-  const configBase = "https://configurador.audi.pt/cc-pt/pt_PT_AUDI23/A/auv/";   //base URL 
 
-  
-  //extracts the model code in the URL
-  const modelMatch = url.match(/\/([A-B]?\d{2}[A-B]?)\/|\/([A-B]?\d{2}[A-B]?)\?/); 
-  if (!modelMatch) return console.warn("No model code found."); 
+  // Send the URL to the Cloudflare Worker for processing
+  const response = await fetch("https://my-worker.davidsousanunes41.workers.dev/process", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url })
+  });
 
-  
-  //registers the model code from the URL according to the parameters
-  const modelCode = modelMatch[1] || modelMatch[2]; 
-  console.log(`Detected Model Code: ${modelCode}`); 
-
-  
-  //fetches the corresponding model path from the Worker(cloud flare)
-  const response = await fetch(`https://my-worker.davidsousanunes41.workers.dev/?model=${modelCode}`);
-  if (!response.ok) return console.warn("Failed to fetch model from database.");
+  if (!response.ok) return console.warn("Failed to fetch response from Worker.");
 
   const data = await response.json();
-  if (!data.modelPath) return console.warn("Model path not found in database.");
-  
-  
-  //creates de model viewer page according to the model code found in the URL
-  const modelViewerUrl = `https://3dmodels-7c1.pages.dev/viewer.html?model=${encodeURIComponent(data.modelPath)}`;
-  
-  
-  //QR code generator
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(modelViewerUrl)}`;
-  
-  
-  //QR injector to webpage
-  injectQRCode(qrCodeUrl);
+  if (!data.qrCodeUrl) return console.warn("No QR code generated.");
+
+  // Inject the QR code into the webpage
+  injectQRCode(data.qrCodeUrl);
 })();
 
-
-//QR injector to webpage
 function injectQRCode(qrCodeUrl) {
   const qrImg = document.createElement("img");
   qrImg.src = qrCodeUrl;

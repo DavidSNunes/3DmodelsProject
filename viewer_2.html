@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AR Model Viewer</title>
-    <script type="module" src="https://unpkg.com/@google/model-viewer"></script> <!-- Google ModelViewer Library -->
+    <script type="module" src="https://unpkg.com/@google/model-viewer"></script> <!--google modelviewer library for rendering 3D models -->
     <style>
         body { 
             text-align: center; 
@@ -34,7 +34,7 @@
 <body>
     <h2>View Model in AR</h2>
 
-    <!-- Model viewer component to display 3D models -->
+    <!-- Model Viewer component to display 3D models -->
     <model-viewer id="modelViewer"
         ar
         ar-modes="webxr scene-viewer quick-look"
@@ -43,11 +43,11 @@
     </model-viewer>
 
     <script>
-        // Get the model file from the URL
+        //get the model from the URL
         const urlParams = new URLSearchParams(window.location.search);
-        const modelFile = urlParams.get("file");
+        const modelFile = urlParams.get("model");
 
-        // If a model exists, load it into the model-viewer element
+        //If a model exists, load it into the model-viewer element
         if (modelFile) {
             const modelViewer = document.getElementById("modelViewer");
             modelViewer.setAttribute("src", `https://3dmodels-7c1.pages.dev/models/${modelFile}`);
