@@ -2,7 +2,7 @@
   const url = window.location.href;
 
   // Send the URL to the Cloudflare Worker for processing
-  const response = await fetch("https://my-worker.davidsousanunes41.workers.dev/process", {
+  const response = await fetch("https://3dmodelsworker.davidsousanunes41.workers.dev/process", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url })
