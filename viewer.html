@@ -50,7 +50,7 @@
         // If a model exists, load it into the model-viewer element
         if (modelFile) {
             const modelViewer = document.getElementById("modelViewer");
-            modelViewer.setAttribute("src", `https://3dmodels-7c1.pages.dev/models/${modelFile}`);
+            modelViewer.setAttribute("src", `https://3dmodelsproject.pages.dev/viewer.html?modelCode=${modelCode}&file=${modelFile}`);
         } else {
             console.warn("No model file specified in the URL.");
         }
