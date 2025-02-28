@@ -43,16 +43,22 @@
     </model-viewer>
 
     <script>
-        // Get the model file from the URL
+        // Get the model file and code from the URL
         const urlParams = new URLSearchParams(window.location.search);
+        const modelCode = urlParams.get("modelCode");
         const modelFile = urlParams.get("file");
 
-        // If a model exists, load it into the model-viewer element
-        if (modelFile) {
+        // Check if the model file and model code are present in the URL
+        if (modelFile && modelCode) {
             const modelViewer = document.getElementById("modelViewer");
-            modelViewer.setAttribute("src", `https://3dmodelsproject.pages.dev/viewer.html?file=${modelFile}`);
+
+            // Construct the model file URL (assuming it's hosted on your Cloudflare Pages or GitHub)
+            const modelUrl = `https://3dmodelsproject.pages.dev/models/${modelFile}`;
+
+            // Load the model into the model-viewer component
+            modelViewer.setAttribute("src", modelUrl);
         } else {
-            console.warn("No model file specified in the URL.");
+            console.warn("Model code or file is missing in the URL.");
         }
     </script>
 </body>
