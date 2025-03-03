@@ -1,18 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "Audi AR QR Code Injector 2",
-  "version": "1.1",
-  "permissions": [
-    "scripting", 
-    "activeTab"
-  ],
-  "host_permissions": [
-    "https://configurador.audi.pt/*"
-  ],
+  "name": "QR Code Injector",
+  "version": "1.0",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["https://configurador.audi.pt/*", "https://www.worten.pt/*"],
+  "background": { "service_worker": "content.js" },
   "content_scripts": [
-    {
-      "matches": ["https://configurador.audi.pt/*"],  
-      "js": ["content.js"]
-    }
+      {
+          "matches": ["https://configurador.audi.pt/*", "https://www.worten.pt/*"],
+          "js": ["content.js"]
+      }
   ]
 }
