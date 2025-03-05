@@ -26,7 +26,7 @@
       text: window.location.href,
       width: 200, // Larger QR code
       height: 200,
-      correctLevel: QRCode.CorrectLevel.H // High error correction
+      correctLevel: QRCode.CorrectLevel.L // High error correction
   });
 
 })();
