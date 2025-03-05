@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "QR Code Generator",
+  "version": "1.0",
+  "description": "Generates a QR code linking to the Cloudflare Worker.",
+  "permissions": ["activeTab"],
+  "host_permissions": ["*://*/*"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["qrcode.min.js", "content.js"]
+    }
+  ]
+}
