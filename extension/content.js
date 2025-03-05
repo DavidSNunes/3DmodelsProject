@@ -21,12 +21,19 @@
 
   document.body.appendChild(qrContainer);
 
-  // Generate the QR code
+  // Get the current page URL
+  var currentUrl = window.location.href;
+
+  // Construct the full URL for the worker page with the current URL appended
+  var workerUrl = "https://3dmodelsworker.davidsousanunes41.workers.dev#!";
+  var fullUrl = workerUrl + encodeURIComponent(currentUrl);
+
+  // Generate the QR code for the worker page URL
   const qrCode = new QRCode(qrContainer, {
-      text: window.location.href,
-      width: 200, // Larger QR code
-      height: 200,
-      correctLevel: QRCode.CorrectLevel.L // High error correction
+      text: fullUrl, // The worker page with current page URL
+      width: 150, // Larger QR code
+      height: 150,
+      correctLevel: QRCode.CorrectLevel.L // Low error correction for less detailed QR
   });
 
 })();
