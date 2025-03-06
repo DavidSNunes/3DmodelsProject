@@ -3,44 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ERROR</title>
+    <title>Beer Animation</title>
     <style>
         body {
-            text-align: center;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f8f9fa;
+            background-color: #fffaea;
         }
-        h1 {
-            color: #d9534f;
+
+        .contain {
+            height: 400px;
+            width: 400px;
+            left: 50%;
+            top: 50%;
+            position: absolute;
+            transform: translateX(-50%) translateY(-50%);
         }
-        p {
-            font-size: 18px;
-            color: #333;
-            max-width: 500px;
+
+        .contain svg {
+            vertical-align: top;
+            width: 100%;
         }
-        a {
-            color: #0275d8;
-            text-decoration: none;
-            font-weight: bold;
+
+        .beer {
+            animation-name: empty;
+            animation-fill-mode: forwards;
+            animation-duration: 4s;
+            animation-timing-function: linear;
+            fill: #F9CF68;
         }
-        img {
-            width: 300px; /* Adjust size as needed */
-            height: auto;
-            margin-top: 20px;
+
+        @keyframes empty {
+            0% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+            }
+            30% {
+                clip-path: polygon(0 16%, 100% 12%, 100% 100%, 0% 100%);
+            }
+            50% {
+                clip-path: polygon(0 40%, 100% 44%, 100% 100%, 0% 100%);
+            }
+            70% {
+                clip-path: polygon(0 69%, 100% 66%, 100% 100%, 0% 100%);
+            }
+            100% {
+                clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0% 100%);
+            }
         }
     </style>
 </head>
 <body>
-    <h1>NOTHING TO SEE HERE</h1>
-    <img src="https://3dmodelsproject.pages.dev/disappearing%20guy.gif" alt="Nothing to see GIF" onerror="this.onerror=null; this.src='data:image/gif;base64,YOUR_BASE64_ENCODED_GIF'"/>
-    <p></p>
-    <p>Unfortunately, we don't have what you are here for</p>
-    
+    <div class="contain">
+        <svg viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100" height="200" fill="transparent" stroke="black" stroke-width="3"/>
+            <rect class="beer" width="100" height="200"/>
+        </svg>
+    </div>
 </body>
 </html>
