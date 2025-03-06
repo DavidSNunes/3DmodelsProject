@@ -25,7 +25,7 @@
   var currentUrl = window.location.href;
 
   // Construct the full URL for the worker page with the current URL appended
-  var workerUrl = "https://3dmodelsworker.davidsousanunes41.workers.dev#!";
+  var workerUrl = "https://3dmodelsworker.davidsousanunes41.workers.dev/?url=";
   var fullUrl = workerUrl + encodeURIComponent(currentUrl);
 
   // Generate the QR code for the worker page URL
