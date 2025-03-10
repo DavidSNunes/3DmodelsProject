@@ -1,0 +1,51 @@
+document.addEventListener("DOMContentLoaded", async () => {
+    const params = new URLSearchParams(window.location.search);
+    const modelCode = params.get("model");
+    
+    if (!modelCode) {
+        alert("No model specified!");
+        return;
+    }
+
+    // Fetch model info from Cloudflare KV (Worker will inject this)
+    const modelData = JSON.parse(decodeURIComponent(params.get("data") || "{}"));
+
+    if (!modelData.file) {
+        alert("Model not found!");
+        return;
+    }
+
+    // Update UI with model info
+    document.getElementById("product-name").textContent = modelData.name;
+    document.getElementById("product-desc").textContent = modelData.desc;
+    document.getElementById("product-link").href = modelData.link;
+
+    // Setup Three.js scene
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Load model
+    const loader = new THREE.GLTFLoader();
+    loader.load(`https://3dmodelsproject.pages.dev/models/${modelData.file}`, (gltf) => {
+        scene.add(gltf.scene);
+        gltf.scene.position.set(0, 0, -2);  // Adjust model position
+    });
+
+    // Add light
+    const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+    scene.add(light);
+
+    // AR Button
+    document.body.appendChild(ARButton.createButton(renderer));
+
+    // Render loop
+    function animate() {
+        renderer.setAnimationLoop(() => {
+            renderer.render(scene, camera);
+        });
+    }
+    animate();
+});
