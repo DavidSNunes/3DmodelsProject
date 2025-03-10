@@ -4,10 +4,17 @@ import { GLTFLoader } from "https://unpkg.com/three@0.174.0/examples/jsm/loaders
 
 document.addEventListener("DOMContentLoaded", async () => {
     const params = new URLSearchParams(window.location.search);
-    const modelData = JSON.parse(decodeURIComponent(params.get("model") || "{}"));
+    const modelDataString = params.get("model");
+
+    if (!modelDataString) {
+        alert("Model not found!");
+        return;
+    }
+
+    const modelData = JSON.parse(decodeURIComponent(modelDataString));
 
     if (!modelData.file) {
-        alert("Model not found!");
+        alert("Model file missing!");
         return;
     }
 
