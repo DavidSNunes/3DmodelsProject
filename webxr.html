@@ -4,65 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebXR Model Viewer</title>
-    <script type="module">
-        import * as THREE from 'https://threejs.org/build/three.module.js';
-        import { ARButton } from 'https://threejs.org/examples/jsm/webxr/ARButton.js';
-        import { GLTFLoader } from 'https://threejs.org/examples/jsm/loaders/GLTFLoader.js';
-
-        let scene, camera, renderer, controller, model;
-        
-        function init() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.xr.enabled = true;
-            document.body.appendChild(renderer.domElement);
-
-            const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-            scene.add(light);
-
-            const arButton = ARButton.createButton(renderer);
-            document.body.appendChild(arButton);
-
-            controller = renderer.xr.getController(0);
-            scene.add(controller);
-
-            loadModel();
-        }
-
-        function loadModel() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const modelFile = urlParams.get("file");
-
-            if (modelFile) {
-                const loader = new GLTFLoader();
-                loader.load(`https://3dmodelsproject.pages.dev/models/${modelFile}`, (gltf) => {
-                    model = gltf.scene;
-                    scene.add(model);
-                }, undefined, (error) => {
-                    console.error("Error loading model:", error);
-                });
-            }
-        }
-
-        function animate() {
-            renderer.setAnimationLoop(() => {
-                renderer.render(scene, camera);
-            });
-        }
-
-        window.onload = () => {
-            init();
-            animate();
-        };
-    </script>
+    <script type="module" src="webxr.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; }
-        .error-message { color: red; text-align: center; display: none; font-size: 18px; }
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        .ui-container {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .ui-container a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
-    <p id="errorMessage" class="error-message">Model not found.</p>
+    <div class="ui-container">
+        <h2 id="product-name">Loading...</h2>
+        <p id="product-desc">Please wait while we load your model.</p>
+        <a id="product-link" href="#" target="_blank">View Product</a>
+    </div>
 </body>
 </html>
