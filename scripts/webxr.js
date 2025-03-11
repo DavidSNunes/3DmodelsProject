@@ -19,9 +19,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // Update UI
-    document.getElementById("product-name").textContent = modelData.name;
-    document.getElementById("product-desc").textContent = modelData.desc;
-    document.getElementById("product-link").href = modelData.link;
+    document.getElementById("product-name").textContent = modelData.name || "Unknown Model";
+    document.getElementById("product-desc").textContent = modelData.desc || "No description available.";
+    document.getElementById("product-link").href = modelData.link || "#";
+    document.getElementById("product-link").textContent = modelData.link ? "View Product" : "No Link Available";
 
     // Setup Three.js scene
     const scene = new THREE.Scene();
@@ -35,6 +36,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     loader.load(`https://3dmodelsproject.pages.dev/models/${modelData.file}`, (gltf) => {
         scene.add(gltf.scene);
         gltf.scene.position.set(0, 0, -2);
+    }, undefined, (error) => {
+        console.error("❌ Error loading model:", error);
+        alert("Failed to load the model.");
     });
 
     // Add light
