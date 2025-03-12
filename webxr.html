@@ -6,53 +6,30 @@
     <title>WebXR Model Viewer</title>
     <script type="module" src="./webxr.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; background: #000; color: #fff; }
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
         .ui-container {
             position: absolute;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.7);
+            color: white;
             padding: 10px 20px;
             border-radius: 10px;
             text-align: center;
         }
-        .ui-container a { color: #4CAF50; text-decoration: none; }
+        .ui-container a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
     </style>
 </head>
+
 <body>
     <div class="ui-container">
         <h2 id="product-name">Loading...</h2>
         <p id="product-desc">Please wait while we load your model.</p>
         <a id="product-link" href="#" target="_blank">View Product</a>
     </div>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const modelData = urlParams.get("model");
-
-            if (modelData) {
-                try {
-                    const parsedModel = JSON.parse(decodeURIComponent(modelData));
-
-                    // Populate model viewer
-                    const modelViewer = document.createElement("model-viewer");
-                    modelViewer.setAttribute("src", `https://3dmodelsproject.pages.dev/models/${parsedModel.file}`);
-                    modelViewer.setAttribute("ar", "");
-                    modelViewer.setAttribute("auto-rotate", "");
-                    modelViewer.setAttribute("camera-controls", "");
-                    document.body.appendChild(modelViewer);
-
-                    // Populate UI
-                    document.getElementById("product-name").textContent = parsedModel.name || "Unknown Model";
-                    document.getElementById("product-desc").textContent = parsedModel.desc || "No description available";
-                    document.getElementById("product-link").href = parsedModel.link || "#";
-                } catch (err) {
-                    console.error("Error parsing model data:", err);
-                }
-            }
-        });
-    </script>
 </body>
 </html>
