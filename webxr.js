@@ -1,84 +1,60 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.130.1/build/three.module.js';
-import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.130.1/examples/jsm/loaders/GLTFLoader.js';
+document.addEventListener("DOMContentLoaded", async () => {
+  let modelData;
 
-let scene, camera, renderer, model;
-let controller, controllerGrip;
-let clock = new THREE.Clock();
-let loader = new GLTFLoader();
+  try {
+      // Try to get the injected model data from a global variable set by the Worker
+      if (window.injectedModelData) {
+          modelData = window.injectedModelData;
+      } else {
+          console.error("❌ No injected model data found!");
+          alert("Model data is missing.");
+          return;
+      }
+  } catch (error) {
+      console.error("❌ Error retrieving model data:", error);
+      alert("Failed to load model data.");
+      return;
+  }
 
-function init() {
-  // Create a basic WebXR scene setup with three.js
+  if (!modelData.file) {
+      alert("Model file missing!");
+      return;
+  }
 
-  // Scene and Camera
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-  camera.position.z = 5;
+  // Update UI
+  document.getElementById("product-name").textContent = modelData.name || "Unknown Model";
+  document.getElementById("product-desc").textContent = modelData.desc || "No description available.";
+  document.getElementById("product-link").href = modelData.link || "#";
+  document.getElementById("product-link").textContent = modelData.link ? "View Product" : "No Link Available";
 
-  // Renderer setup
-  renderer = new THREE.WebGLRenderer({ antialias: true });
+  // Load model into WebXR scene
+  loadModel(modelData.file);
+});
+
+function loadModel(file) {
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer({ alpha: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  // WebXR session setup
-  navigator.xr.requestSession("immersive-ar").then(onSessionStarted);
+  // Load model
+  const loader = new GLTFLoader();
+  loader.load(`https://3dmodelsproject.pages.dev/models/${file}`, (gltf) => {
+      scene.add(gltf.scene);
+      gltf.scene.position.set(0, 0, -2);
+  }, undefined, (error) => {
+      console.error("❌ Error loading model:", error);
+      alert("Failed to load the model.");
+  });
 
-  // Light setup
-  const light = new THREE.AmbientLight(0xffffff, 1);
+  // Add lighting
+  const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
   scene.add(light);
 
-  // Animation loop
-  animate();
+  // Add AR Button
+  document.body.appendChild(ARButton.createButton(renderer));
+
+  // Start rendering
+  renderer.setAnimationLoop(() => renderer.render(scene, camera));
 }
-
-// Handle the WebXR session
-function onSessionStarted(session) {
-  session.addEventListener('end', onSessionEnded);
-  // Here, you can use WebXR API to handle the immersive AR view
-  // This is a placeholder for the WebXR session logic, like setting up controllers or features
-}
-
-// Handle when the WebXR session ends
-function onSessionEnded() {
-  console.log("WebXR session ended");
-}
-
-// Load the GLB model into the WebXR environment
-function loadModelIntoWebXR(modelUrl) {
-  loader.load(
-    modelUrl, 
-    function (gltf) {
-      model = gltf.scene;
-      model.scale.set(1, 1, 1);  // Scale the model if needed
-      scene.add(model);
-    },
-    undefined, // onProgress callback (optional)
-    function (error) {  // onError callback
-      console.error("Error loading model:", error);
-    }
-  );
-}
-
-// Main render loop for WebXR environment
-function animate() {
-  requestAnimationFrame(animate);
-  if (model) {
-    model.rotation.y += 0.01; // Rotate the model slowly for demo purposes
-  }
-  renderer.render(scene, camera);
-}
-
-// Call init when the page is ready
-window.addEventListener('load', () => {
-  const modelData = window.modelData; // Fetch model data from the page
-  const modelUrl = 'https://3dmodelsproject.pages.dev/models/' + modelData.file;
-
-  // Call the function to load the model into WebXR
-  if (modelUrl) {
-    loadModelIntoWebXR(modelUrl);
-  } else {
-    console.error("No valid model URL found.");
-  }
-
-  // Continue the initialization after loading the model
-  init();
-});
