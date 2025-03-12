@@ -40,7 +40,9 @@ function loadModel(file) {
 
   // Load model
   const loader = new GLTFLoader();
-  loader.load(`https://3dmodelsproject.pages.dev/models/${file}`, (gltf) => {
+  const modelUrl = `/models/${decodeURIComponent(file)}`;
+
+  loader.load(modelUrl, (gltf) => {
       scene.add(gltf.scene);
       gltf.scene.position.set(0, 0, -2);
   }, undefined, (error) => {
