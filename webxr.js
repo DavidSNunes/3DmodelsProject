@@ -2,33 +2,33 @@ document.addEventListener("DOMContentLoaded", async () => {
   let modelData;
 
   try {
-      // Try to get the injected model data from a global variable set by the Worker
-      if (window.injectedModelData) {
-          modelData = window.injectedModelData;
-      } else {
-          console.error("❌ No injected model data found!");
-          alert("Model data is missing.");
-          return;
-      }
-  } catch (error) {
-      console.error("❌ Error retrieving model data:", error);
-      alert("Failed to load model data.");
+    if (window.injectedModelData) {
+      modelData = window.injectedModelData;
+      console.log("🔍 Parsed model data:", modelData);
+    } else {
+      console.error("❌ No injected model data found!");
+      alert("Model data is missing.");
       return;
+    }
+  } catch (error) {
+    console.error("❌ Error retrieving model data:", error);
+    alert("Failed to load model data.");
+    return;
   }
 
   if (!modelData.file) {
-      alert("Model file missing!");
-      return;
+    alert("Model file missing!");
+    return;
   }
 
-  // Update UI
+  // Set UI elements
   document.getElementById("product-name").textContent = modelData.name || "Unknown Model";
   document.getElementById("product-desc").textContent = modelData.desc || "No description available.";
   document.getElementById("product-link").href = modelData.link || "#";
   document.getElementById("product-link").textContent = modelData.link ? "View Product" : "No Link Available";
 
-  // Load model into WebXR scene
-  loadModel(modelData.file);
+  // Load the model
+  loadModel(decodeURIComponent(modelData.file));
 });
 
 function loadModel(file) {
@@ -38,17 +38,23 @@ function loadModel(file) {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  // Load model
-  const loader = new GLTFLoader();
-  const modelUrl = `/models/${decodeURIComponent(file)}`;
+  // Build the model URL properly
+  const modelUrl = `https://3dmodelsproject.pages.dev/models/${encodeURIComponent(file)}`;
+  console.log("🛠️ Loading model from:", modelUrl);
 
-  loader.load(modelUrl, (gltf) => {
+  const loader = new GLTFLoader();
+  loader.load(
+    modelUrl,
+    (gltf) => {
       scene.add(gltf.scene);
       gltf.scene.position.set(0, 0, -2);
-  }, undefined, (error) => {
+    },
+    undefined,
+    (error) => {
       console.error("❌ Error loading model:", error);
       alert("Failed to load the model.");
-  });
+    }
+  );
 
   // Add lighting
   const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
