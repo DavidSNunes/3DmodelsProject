@@ -24,12 +24,46 @@
         }
     </style>
 </head>
-
 <body>
     <div class="ui-container">
         <h2 id="product-name">Loading...</h2>
         <p id="product-desc">Please wait while we load your model.</p>
         <a id="product-link" href="#" target="_blank">View Product</a>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const modelData = urlParams.get("model");
+
+            console.log("🔎 Received model data from URL:", modelData); // Log the raw data from URL
+
+            if (modelData) {
+                try {
+                    const parsedModel = JSON.parse(decodeURIComponent(modelData));
+                    console.log("🔍 Parsed model data:", parsedModel); // Log the parsed model data
+
+                    // Set model viewer attributes
+                    const modelViewer = document.createElement("model-viewer");
+                    modelViewer.setAttribute("src", `https://3dmodelsproject.pages.dev/models/${parsedModel.file}`);
+                    modelViewer.setAttribute("ar", "");
+                    modelViewer.setAttribute("ar-modes", "webxr scene-viewer quick-look");
+                    modelViewer.setAttribute("auto-rotate", "");
+                    modelViewer.setAttribute("camera-controls", "");
+
+                    document.body.appendChild(modelViewer);
+
+                    // Populate UI
+                    document.getElementById("product-name").textContent = parsedModel.name || "Unknown Model";
+                    document.getElementById("product-desc").textContent = parsedModel.desc || "No description available";
+                    document.getElementById("product-link").href = parsedModel.link || "#";
+                } catch (err) {
+                    console.error("Error parsing model data:", err);
+                }
+            } else {
+                console.log("⚠️ No model data found in URL.");
+            }
+        });
+    </script>
 </body>
 </html>
