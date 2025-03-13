@@ -33,35 +33,25 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const modelData = urlParams.get("model");
+            if (window.modelData) {
+                console.log("🔍 Model data received:", window.modelData);
 
-            console.log("🔎 Received model data from URL:", modelData); // Log the raw data from URL
+                // Set model viewer attributes
+                const modelViewer = document.createElement("model-viewer");
+                modelViewer.setAttribute("src", `https://3dmodelsproject.pages.dev/models/${window.modelData.file}`);
+                modelViewer.setAttribute("ar", "");
+                modelViewer.setAttribute("ar-modes", "webxr scene-viewer quick-look");
+                modelViewer.setAttribute("auto-rotate", "");
+                modelViewer.setAttribute("camera-controls", "");
 
-            if (modelData) {
-                try {
-                    const parsedModel = JSON.parse(decodeURIComponent(modelData));
-                    console.log("🔍 Parsed model data:", parsedModel); // Log the parsed model data
+                document.body.appendChild(modelViewer);
 
-                    // Set model viewer attributes
-                    const modelViewer = document.createElement("model-viewer");
-                    modelViewer.setAttribute("src", `https://3dmodelsproject.pages.dev/models/${parsedModel.file}`);
-                    modelViewer.setAttribute("ar", "");
-                    modelViewer.setAttribute("ar-modes", "webxr scene-viewer quick-look");
-                    modelViewer.setAttribute("auto-rotate", "");
-                    modelViewer.setAttribute("camera-controls", "");
-
-                    document.body.appendChild(modelViewer);
-
-                    // Populate UI
-                    document.getElementById("product-name").textContent = parsedModel.name || "Unknown Model";
-                    document.getElementById("product-desc").textContent = parsedModel.desc || "No description available";
-                    document.getElementById("product-link").href = parsedModel.link || "#";
-                } catch (err) {
-                    console.error("Error parsing model data:", err);
-                }
+                // Populate UI
+                document.getElementById("product-name").textContent = window.modelData.name || "Unknown Model";
+                document.getElementById("product-desc").textContent = window.modelData.desc || "No description available";
+                document.getElementById("product-link").href = window.modelData.link || "#";
             } else {
-                console.log("⚠️ No model data found in URL.");
+                console.error("❌ No model data found.");
             }
         });
     </script>

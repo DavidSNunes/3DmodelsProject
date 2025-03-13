@@ -2,11 +2,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   let modelData;
 
   try {
-    if (window.injectedModelData) {
-      modelData = window.injectedModelData;
+    // Get the model data from the URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const modelDataParam = urlParams.get("model");
+
+    if (modelDataParam) {
+      modelData = JSON.parse(decodeURIComponent(modelDataParam));
       console.log("🔍 Parsed model data:", modelData);
     } else {
-      console.error("❌ No injected model data found!");
+      console.error("❌ No model data found in URL!");
       alert("Model data is missing.");
       return;
     }
@@ -21,14 +25,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // Set UI elements
+  // Update UI
   document.getElementById("product-name").textContent = modelData.name || "Unknown Model";
   document.getElementById("product-desc").textContent = modelData.desc || "No description available.";
   document.getElementById("product-link").href = modelData.link || "#";
   document.getElementById("product-link").textContent = modelData.link ? "View Product" : "No Link Available";
 
-  // Load the model
-  loadModel(decodeURIComponent(modelData.file));
+  // Load model into WebXR scene
+  loadModel(modelData.file);
 });
 
 function loadModel(file) {
@@ -38,23 +42,15 @@ function loadModel(file) {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  // Build the model URL properly
-  const modelUrl = `https://3dmodelsproject.pages.dev/models/${encodeURIComponent(file)}`;
-  console.log("🛠️ Loading model from:", modelUrl);
-
+  // Load model
   const loader = new GLTFLoader();
-  loader.load(
-    modelUrl,
-    (gltf) => {
-      scene.add(gltf.scene);
-      gltf.scene.position.set(0, 0, -2);
-    },
-    undefined,
-    (error) => {
-      console.error("❌ Error loading model:", error);
-      alert("Failed to load the model.");
-    }
-  );
+  loader.load(`https://3dmodelsproject.pages.dev/models/${file}`, (gltf) => {
+    scene.add(gltf.scene);
+    gltf.scene.position.set(0, 0, -2);
+  }, undefined, (error) => {
+    console.error("❌ Error loading model:", error);
+    alert("Failed to load the model.");
+  });
 
   // Add lighting
   const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
