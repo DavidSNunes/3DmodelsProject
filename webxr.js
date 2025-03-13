@@ -24,29 +24,37 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function loadModel(file) {
+  // Set up the scene, camera, and renderer
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
   const renderer = new THREE.WebGLRenderer({ alpha: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  // Load model
-  const loader = new GLTFLoader();
-  loader.load(`https://3dmodelsproject.pages.dev/models/${file}`, (gltf) => {
-    scene.add(gltf.scene);
-    gltf.scene.position.set(0, 0, -2);
-  }, undefined, (error) => {
-    console.error("❌ Error loading model:", error);
-    alert("Failed to load the model.");
-  });
+  // Load the model
+  const loader = new THREE.GLTFLoader();
+  loader.load(
+    `https://3dmodelsproject.pages.dev/models/${file}`,
+    (gltf) => {
+      scene.add(gltf.scene);
+      gltf.scene.position.set(0, 0, -2);
+    },
+    undefined,
+    (error) => {
+      console.error("❌ Error loading model:", error);
+      alert("Failed to load the model.");
+    }
+  );
 
   // Add lighting
   const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
   scene.add(light);
 
   // Add AR Button
-  document.body.appendChild(ARButton.createButton(renderer));
+  document.body.appendChild(THREE.ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
 
   // Start rendering
-  renderer.setAnimationLoop(() => renderer.render(scene, camera));
+  renderer.setAnimationLoop(() => {
+    renderer.render(scene, camera);
+  });
 }
