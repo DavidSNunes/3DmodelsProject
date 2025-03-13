@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("product-link").href = modelData.link || "#";
   document.getElementById("product-link").textContent = modelData.link ? "View Product" : "No Link Available";
 
-  // Load model into WebXR scene
+  // Load model into the scene
   loadModel(modelData.file);
 });
 
@@ -31,13 +31,17 @@ function loadModel(file) {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
+  // Add lighting
+  const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+  scene.add(light);
+
   // Load the model
   const loader = new THREE.GLTFLoader();
   loader.load(
     `https://3dmodelsproject.pages.dev/models/${file}`,
     (gltf) => {
       scene.add(gltf.scene);
-      gltf.scene.position.set(0, 0, -2);
+      gltf.scene.position.set(0, 0, -2); // Adjust the model's position
     },
     undefined,
     (error) => {
@@ -46,15 +50,13 @@ function loadModel(file) {
     }
   );
 
-  // Add lighting
-  const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-  scene.add(light);
+  // Position the camera
+  camera.position.z = 5;
 
-  // Add AR Button
-  document.body.appendChild(THREE.ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
-
-  // Start rendering
-  renderer.setAnimationLoop(() => {
+  // Render the scene
+  const animate = () => {
+    requestAnimationFrame(animate);
     renderer.render(scene, camera);
-  });
+  };
+  animate();
 }
