@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
   if (!window.modelData) {
     console.error("❌ No model data found!");
     alert("Model data is missing.");

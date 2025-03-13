@@ -29,20 +29,5 @@
         <p id="product-desc">Please wait while we load your model.</p>
         <a id="product-link" href="#" target="_blank">View Product</a>
     </div>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            if (window.modelData) {
-                console.log("🔍 Model data received:", window.modelData);
-
-                // Update UI
-                document.getElementById("product-name").textContent = window.modelData.name || "Unknown Model";
-                document.getElementById("product-desc").textContent = window.modelData.desc || "No description available";
-                document.getElementById("product-link").href = window.modelData.link || "#";
-            } else {
-                console.error("❌ No model data found!");
-            }
-        });
-    </script>
 </body>
 </html>
