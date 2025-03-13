@@ -66,6 +66,13 @@ function loadModel(file) {
       controls.maxDistance = 100; // Prevent zooming too far
       controls.maxPolarAngle = Math.PI / 2; // Prevent flipping the model
 
+      // Add AR button
+      const arButton = ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] });
+      document.body.appendChild(arButton);
+
+      // Enable WebXR
+      renderer.xr.enabled = true;
+
       // Render the scene
       const animate = () => {
         requestAnimationFrame(animate);
