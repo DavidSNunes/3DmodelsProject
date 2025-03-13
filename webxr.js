@@ -1,24 +1,12 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  let modelData;
-
-  try {
-    // Get the model data from the URL parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const modelDataParam = urlParams.get("model");
-
-    if (modelDataParam) {
-      modelData = JSON.parse(decodeURIComponent(modelDataParam));
-      console.log("🔍 Parsed model data:", modelData);
-    } else {
-      console.error("❌ No model data found in URL!");
-      alert("Model data is missing.");
-      return;
-    }
-  } catch (error) {
-    console.error("❌ Error retrieving model data:", error);
-    alert("Failed to load model data.");
+  if (!window.modelData) {
+    console.error("❌ No model data found!");
+    alert("Model data is missing.");
     return;
   }
+
+  const modelData = window.modelData;
+  console.log("🔍 Model data received:", modelData);
 
   if (!modelData.file) {
     alert("Model file missing!");

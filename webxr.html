@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebXR Model Viewer</title>
-    <script type="module" src="./webxr.js"></script>
     <style>
         body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
         .ui-container {
@@ -36,22 +35,12 @@
             if (window.modelData) {
                 console.log("🔍 Model data received:", window.modelData);
 
-                // Set model viewer attributes
-                const modelViewer = document.createElement("model-viewer");
-                modelViewer.setAttribute("src", `https://3dmodelsproject.pages.dev/models/${window.modelData.file}`);
-                modelViewer.setAttribute("ar", "");
-                modelViewer.setAttribute("ar-modes", "webxr scene-viewer quick-look");
-                modelViewer.setAttribute("auto-rotate", "");
-                modelViewer.setAttribute("camera-controls", "");
-
-                document.body.appendChild(modelViewer);
-
-                // Populate UI
+                // Update UI
                 document.getElementById("product-name").textContent = window.modelData.name || "Unknown Model";
                 document.getElementById("product-desc").textContent = window.modelData.desc || "No description available";
                 document.getElementById("product-link").href = window.modelData.link || "#";
             } else {
-                console.error("❌ No model data found.");
+                console.error("❌ No model data found!");
             }
         });
     </script>
