@@ -57,26 +57,9 @@ function loadModel(file) {
       cameraZ *= 1.5; // Adjust for a better view
       camera.position.z = cameraZ;
 
-      // Set up orbit controls
-      const controls = new THREE.OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true; // Smooth movement
-      controls.dampingFactor = 0.25;
-      controls.screenSpacePanning = false;
-      controls.minDistance = 1; // Prevent zooming too close
-      controls.maxDistance = 100; // Prevent zooming too far
-      controls.maxPolarAngle = Math.PI / 2; // Prevent flipping the model
-
-      // Add AR button
-      const arButton = ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] });
-      document.body.appendChild(arButton);
-
-      // Enable WebXR
-      renderer.xr.enabled = true;
-
       // Render the scene
       const animate = () => {
         requestAnimationFrame(animate);
-        controls.update(); // Required if controls.enableDamping is true
         renderer.render(scene, camera);
       };
       animate();
