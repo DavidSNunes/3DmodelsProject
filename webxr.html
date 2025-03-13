@@ -28,8 +28,6 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/loaders/GLTFLoader.js"></script>
     <!-- Load OrbitControls -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/controls/OrbitControls.js"></script>
-    <!-- Load ARButton from a reliable source -->
-    <script src="https://threejs.org/examples/jsm/webxr/ARButton.js"></script>
 </head>
 <body>
     <div class="ui-container">
@@ -37,6 +35,6 @@
         <p id="product-desc">Please wait while we load your model.</p>
         <a id="product-link" href="#" target="_blank">View Product</a>
     </div>
-    <script src="/webxr.js"></script>
+    <script type="module" src="/webxr.js"></script>
 </body>
 </html>

@@ -1,3 +1,5 @@
+import { ARButton } from 'https://threejs.org/examples/jsm/webxr/ARButton.js';
+
 document.addEventListener("DOMContentLoaded", () => {
   if (!window.modelData) {
     console.error("❌ No model data found!");
