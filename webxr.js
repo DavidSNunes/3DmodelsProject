@@ -40,8 +40,46 @@ function loadModel(file) {
   loader.load(
     `https://3dmodelsproject.pages.dev/models/${file}`,
     (gltf) => {
-      scene.add(gltf.scene);
-      gltf.scene.position.set(0, 0, -2); // Adjust the model's position
+      const model = gltf.scene;
+      scene.add(model);
+
+      // Center the model in the scene
+      const box = new THREE.Box3().setFromObject(model);
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+      model.position.sub(center); // Center the model
+
+      // Adjust the camera to fit the model
+      const size = box.getSize(new THREE.Vector3()).length();
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const fov = camera.fov * (Math.PI / 180);
+      let cameraZ = Math.abs((maxDim / 2) * Math.tan(fov / 2));
+      cameraZ *= 1.5; // Adjust for a better view
+      camera.position.z = cameraZ;
+
+      // Set up orbit controls
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true; // Smooth movement
+      controls.dampingFactor = 0.25;
+      controls.screenSpacePanning = false;
+      controls.minDistance = 1; // Prevent zooming too close
+      controls.maxDistance = 100; // Prevent zooming too far
+      controls.maxPolarAngle = Math.PI / 2; // Prevent flipping the model
+
+      // Add AR button
+      const arButton = ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] });
+      document.body.appendChild(arButton);
+
+      // Enable WebXR
+      renderer.xr.enabled = true;
+
+      // Render the scene
+      const animate = () => {
+        requestAnimationFrame(animate);
+        controls.update(); // Required if controls.enableDamping is true
+        renderer.render(scene, camera);
+      };
+      animate();
     },
     undefined,
     (error) => {
@@ -49,14 +87,4 @@ function loadModel(file) {
       alert("Failed to load the model.");
     }
   );
-
-  // Position the camera
-  camera.position.z = 5;
-
-  // Render the scene
-  const animate = () => {
-    requestAnimationFrame(animate);
-    renderer.render(scene, camera);
-  };
-  animate();
 }
