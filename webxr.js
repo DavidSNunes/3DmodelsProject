@@ -1,23 +1,13 @@
 document.addEventListener("DOMContentLoaded", () => {
-  if (!window.modelData) {
-    console.error("❌ No model data found!");
-    alert("Model data is missing.");
-    return;
-  }
+  // Hardcode the model data for testing
+  const modelData = {
+    file: "tv-hisense.glb",
+    name: "TV Hisense 55A6N",
+    desc: "Perfeita para quem gosta do Discovery Channel",
+    link: "https://www.worten.pt/produtos/tv-hisense-55a6n-led-55-140-cm-4k-ultra-hd-smart-tv-8022846"
+  };
 
-  const modelData = window.modelData;
   console.log("🔍 Model data received:", modelData);
-
-  if (!modelData.file) {
-    alert("Model file missing!");
-    return;
-  }
-
-  // Update UI
-  document.getElementById("product-name").textContent = modelData.name || "Unknown Model";
-  document.getElementById("product-desc").textContent = modelData.desc || "No description available.";
-  document.getElementById("product-link").href = modelData.link || "#";
-  document.getElementById("product-link").textContent = modelData.link ? "View Product" : "No Link Available";
 
   // Load model into the scene
   loadModel(modelData.file);
@@ -43,19 +33,8 @@ function loadModel(file) {
       const model = gltf.scene;
       scene.add(model);
 
-      // Center the model in the scene
-      const box = new THREE.Box3().setFromObject(model);
-      const center = new THREE.Vector3();
-      box.getCenter(center);
-      model.position.sub(center); // Center the model
-
-      // Adjust the camera to fit the model
-      const size = box.getSize(new THREE.Vector3()).length();
-      const maxDim = Math.max(size.x, size.y, size.z);
-      const fov = camera.fov * (Math.PI / 180);
-      let cameraZ = Math.abs((maxDim / 2) * Math.tan(fov / 2));
-      cameraZ *= 1.5; // Adjust for a better view
-      camera.position.z = cameraZ;
+      // Position the camera
+      camera.position.z = 5;
 
       // Render the scene
       const animate = () => {
