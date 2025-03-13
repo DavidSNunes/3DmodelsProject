@@ -1,13 +1,23 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // Hardcode the model data for testing
-  const modelData = {
-    file: "tv-hisense.glb",
-    name: "TV Hisense 55A6N",
-    desc: "Perfeita para quem gosta do Discovery Channel",
-    link: "https://www.worten.pt/produtos/tv-hisense-55a6n-led-55-140-cm-4k-ultra-hd-smart-tv-8022846"
-  };
+  if (!window.modelData) {
+    console.error("❌ No model data found!");
+    alert("Model data is missing.");
+    return;
+  }
 
+  const modelData = window.modelData;
   console.log("🔍 Model data received:", modelData);
+
+  if (!modelData.file) {
+    alert("Model file missing!");
+    return;
+  }
+
+  // Update UI
+  document.getElementById("product-name").textContent = modelData.name || "Unknown Model";
+  document.getElementById("product-desc").textContent = modelData.desc || "No description available.";
+  document.getElementById("product-link").href = modelData.link || "#";
+  document.getElementById("product-link").textContent = modelData.link ? "View Product" : "No Link Available";
 
   // Load model into the scene
   loadModel(modelData.file);
@@ -30,18 +40,8 @@ function loadModel(file) {
   loader.load(
     `https://3dmodelsproject.pages.dev/models/${file}`,
     (gltf) => {
-      const model = gltf.scene;
-      scene.add(model);
-
-      // Position the camera
-      camera.position.z = 5;
-
-      // Render the scene
-      const animate = () => {
-        requestAnimationFrame(animate);
-        renderer.render(scene, camera);
-      };
-      animate();
+      scene.add(gltf.scene);
+      gltf.scene.position.set(0, 0, -2); // Adjust the model's position
     },
     undefined,
     (error) => {
@@ -49,4 +49,14 @@ function loadModel(file) {
       alert("Failed to load the model.");
     }
   );
+
+  // Position the camera
+  camera.position.z = 5;
+
+  // Render the scene
+  const animate = () => {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+  };
+  animate();
 }
