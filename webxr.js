@@ -29,13 +29,15 @@ function initAR() {
 
 // Load the 3D model
 function loadModel() {
-    const modelUrl = new URLSearchParams(window.location.search).get('model') || 'default.glb';
+    const modelUrl = window.modelData ? window.modelData.file : 'default.glb'; // Use model data URL if present
     const loader = new THREE.GLTFLoader();
 
     loader.load(`/models/${modelUrl}`, (gltf) => {
         const model = gltf.scene;
         model.position.set(0, -0.5, -1);
         scene.add(model);
+    }, undefined, function (error) {
+        console.error('Error loading the model:', error);
     });
 }
 
@@ -78,6 +80,17 @@ window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Ensure model data is passed to the script
+window.addEventListener('DOMContentLoaded', () => {
+    if (window.modelData) {
+        document.getElementById('product-name').innerText = window.modelData.name || 'Loading...';
+        document.getElementById('product-desc').innerText = window.modelData.desc || 'Please wait while we load your model.';
+        document.getElementById('product-link').href = window.modelData.link || '#';
+    } else {
+        console.log('No model data found');
+    }
 });
 
 initAR();
