@@ -51,9 +51,13 @@ function loadModel() {
   const modelUrl = window.modelData ? window.modelData.file : 'default.glb'; // Ensure we're using the model URL from modelData
   console.log(`Loading model from URL: ${modelUrl}`);
 
+  // Update model URL to use the Cloudflare Pages link
+  const cloudflareBaseURL = 'https://3dmodelsproject.pages.dev/models/';
+  const fullModelURL = cloudflareBaseURL + modelUrl;
+
   const loader = new THREE.GLTFLoader();
 
-  loader.load(`/models/${modelUrl}`, (gltf) => {
+  loader.load(fullModelURL, (gltf) => {
       const model = gltf.scene;
       model.position.set(0, -0.5, -1);
       scene.add(model);
