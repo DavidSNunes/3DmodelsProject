@@ -14,8 +14,12 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-let scene, camera, renderer, controller, model, clock, arSession, arAnchor, touchStartX, touchStartY;
+let scene, camera, renderer, controller, model, clock, arSession, arAnchor;
 let isModelInteracted = false;
+let touchStartX = 0;
+let touchStartY = 0;
+let touchRotationX = 0;
+let touchRotationY = 0;
 
 // Initialize the AR scene
 function initAR() {
@@ -44,6 +48,12 @@ function initAR() {
 
   // Add AR Button
   document.body.appendChild(createARButton());
+
+  // Handle touch/mouse interaction for rotation and zoom
+  document.addEventListener('mousedown', onMouseDown, false);
+  document.addEventListener('mousemove', onMouseMove, false);
+  document.addEventListener('mouseup', onMouseUp, false);
+  document.addEventListener('wheel', onMouseWheel, false);
 
   // Handle touch events for mobile
   document.addEventListener('touchstart', onTouchStart, false);
@@ -77,10 +87,13 @@ function loadModel() {
 // Render the scene
 function render() {
   if (model) {
-    // Update model's position in AR space
-    if (arAnchor) {
-      model.position.set(arAnchor.position.x, arAnchor.position.y, arAnchor.position.z);
-    }
+    model.rotation.x = touchRotationX; 
+    model.rotation.y = touchRotationY;
+  }
+
+  // Update AR anchor position
+  if (arAnchor) {
+    model.position.set(arAnchor.position.x, arAnchor.position.y, arAnchor.position.z);
   }
 
   renderer.render(scene, camera);
@@ -121,31 +134,41 @@ function createARButton() {
 
 // Set up an anchor for the AR model (so it can be manipulated)
 function createARAnchor() {
-  // Create an anchor for the model's position in AR
+  // Create a simple anchor (you can replace this with more complex logic based on hit test)
   arAnchor = new THREE.Group();
   scene.add(arAnchor);
   arAnchor.add(model); // Attach the model to the anchor
-
-  // Place the model in the real world via hit-test (initial placement)
-  arSession.requestHitTestSource({ space: arSession.requestReferenceSpace('viewer') })
-    .then((source) => {
-      arSession.requestHitTest({ source: source })
-        .then((results) => {
-          if (results.length > 0) {
-            const hitPose = results[0].getPose(arSession.requestReferenceSpace('viewer'));
-            arAnchor.position.set(hitPose.position.x, hitPose.position.y, hitPose.position.z);
-          }
-        })
-        .catch((error) => {
-          console.error('Error with hit test:', error);
-        });
-    })
-    .catch((error) => {
-      console.error('Error requesting hit test source:', error);
-    });
+  model.position.set(0, -0.5, -1); // Adjust model's initial position in AR
 }
 
-// Touch interaction: Move model by dragging on mobile
+// Mouse and Touch Interaction: Rotation and Zoom (for desktop)
+function onMouseDown(event) {
+  touchStartX = event.clientX;
+  touchStartY = event.clientY;
+}
+
+function onMouseMove(event) {
+  if (event.buttons === 1) { // Left click or touch dragging
+    touchRotationX += (event.clientY - touchStartY) * 0.01;
+    touchRotationY += (event.clientX - touchStartX) * 0.01;
+    touchStartX = event.clientX;
+    touchStartY = event.clientY;
+  }
+}
+
+function onMouseUp(event) {}
+
+function onMouseWheel(event) {
+  if (model) {
+    model.scale.set(
+      model.scale.x + event.deltaY * 0.01,
+      model.scale.y + event.deltaY * 0.01,
+      model.scale.z + event.deltaY * 0.01
+    );
+  }
+}
+
+// Mobile touch interaction
 function onTouchStart(event) {
   if (event.touches.length === 1) {
     touchStartX = event.touches[0].clientX;
@@ -154,19 +177,13 @@ function onTouchStart(event) {
 }
 
 function onTouchMove(event) {
-  if (event.touches.length === 1 && arAnchor) {
+  if (event.touches.length === 1) {
     const touchEndX = event.touches[0].clientX;
     const touchEndY = event.touches[0].clientY;
 
-    // Calculate delta movement
-    const deltaX = touchEndX - touchStartX;
-    const deltaY = touchEndY - touchStartY;
+    touchRotationX += (touchEndY - touchStartY) * 0.01;
+    touchRotationY += (touchEndX - touchStartX) * 0.01;
 
-    // Update anchor's position based on movement (dragging the model in AR)
-    arAnchor.position.x += deltaX * 0.01;
-    arAnchor.position.y -= deltaY * 0.01;
-
-    // Store new touch position for next move
     touchStartX = touchEndX;
     touchStartY = touchEndY;
   }
