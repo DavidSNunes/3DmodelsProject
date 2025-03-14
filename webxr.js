@@ -1,21 +1,21 @@
-// Ensure model data is available and proceed with loading
 window.addEventListener('DOMContentLoaded', () => {
   if (window.modelData) {
-      console.log('Model data passed to WebXR:', window.modelData);
+    console.log('Model data passed to WebXR:', window.modelData);
 
-      // Update UI elements with model info
-      document.getElementById('product-name').innerText = window.modelData.name || 'Loading...';
-      document.getElementById('product-desc').innerText = window.modelData.desc || 'Please wait while we load your model.';
-      document.getElementById('product-link').href = window.modelData.link || '#';
-      
-      initAR(); // Initialize AR after ensuring model data is ready
+    // Update UI elements with model info
+    document.getElementById('product-name').innerText = window.modelData.name || 'Loading...';
+    document.getElementById('product-desc').innerText = window.modelData.desc || 'Please wait while we load your model.';
+    document.getElementById('product-link').href = window.modelData.link || '#';
+    
+    initAR(); // Initialize AR after ensuring model data is ready
   } else {
-      console.log('No model data found');
+    console.log('No model data found');
   }
 });
 
 let scene, camera, renderer, controller, model, clock, arSession, arAnchor;
 let isModelInteracted = false;
+let rotateSpeed = 0.01;  // Rotation speed for the 3D model
 
 // Initialize the AR scene
 function initAR() {
@@ -71,8 +71,9 @@ function loadModel() {
 
 // Render the scene
 function render() {
-  if (arAnchor && model) {
-    model.rotation.x += 0.01; // Optional: add rotation for visual effect
+  if (model) {
+    // Rotate the model in the browser, but do not move it
+    model.rotation.y += rotateSpeed;  // Rotate model around Y-axis
   }
 
   renderer.render(scene, camera);
@@ -120,7 +121,7 @@ function createARAnchor() {
   model.position.set(0, -0.5, -1); // Adjust model's initial position in AR
 }
 
-// Handle touch/mouse interaction for movement and rotation (for desktop)
+// Handle touch/mouse interaction for rotating the model (no movement allowed)
 let isDragging = false;
 let dragStartX, dragStartY;
 
@@ -135,8 +136,9 @@ function onMouseMove(event) {
     const deltaX = event.clientX - dragStartX;
     const deltaY = event.clientY - dragStartY;
 
-    model.position.x += deltaX * 0.01; // Move model horizontally
-    model.position.y -= deltaY * 0.01; // Move model vertically
+    // Rotate model based on mouse movement
+    model.rotation.y += deltaX * 0.005; // Rotate around Y-axis
+    model.rotation.x += deltaY * 0.005; // Rotate around X-axis
 
     dragStartX = event.clientX;
     dragStartY = event.clientY;
@@ -151,7 +153,7 @@ document.addEventListener('mousedown', onMouseDown, false);
 document.addEventListener('mousemove', onMouseMove, false);
 document.addEventListener('mouseup', onMouseUp, false);
 
-// Mobile touch interaction for movement
+// Mobile touch interaction for rotating the model
 let touchStartX, touchStartY;
 
 function onTouchStart(event) {
@@ -169,8 +171,9 @@ function onTouchMove(event) {
     const deltaX = touchEndX - touchStartX;
     const deltaY = touchEndY - touchStartY;
 
-    model.position.x += deltaX * 0.01; // Move model horizontally
-    model.position.y -= deltaY * 0.01; // Move model vertically
+    // Rotate model based on touch movement
+    model.rotation.y += deltaX * 0.005; // Rotate around Y-axis
+    model.rotation.x += deltaY * 0.005; // Rotate around X-axis
 
     touchStartX = touchEndX;
     touchStartY = touchEndY;
