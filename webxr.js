@@ -1,7 +1,6 @@
 // Ensure model data is available and proceed with loading
 window.addEventListener('DOMContentLoaded', () => {
   if (window.modelData) {
-      // Log model data to make sure it's being passed correctly
       console.log('Model data passed to WebXR:', window.modelData);
 
       // Update UI elements with model info
@@ -15,8 +14,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Set up the WebXR scene and AR session
-let scene, camera, renderer, controller, model, clock;
+let scene, camera, renderer, controller, model, clock, arSession, arAnchor;
 let isModelInteracted = false;
 let touchStartX = 0;
 let touchStartY = 0;
@@ -26,7 +24,6 @@ let touchRotationY = 0;
 // Initialize the AR scene
 function initAR() {
   scene = new THREE.Scene();
-
   camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
   scene.add(camera);
 
@@ -68,10 +65,9 @@ function initAR() {
 
 // Load the 3D model
 function loadModel() {
-  const modelUrl = window.modelData ? window.modelData.file : 'default.glb'; // Ensure we're using the model URL from modelData
+  const modelUrl = window.modelData ? window.modelData.file : 'default.glb'; 
   console.log(`Loading model from URL: ${modelUrl}`);
 
-  // Update model URL to use the Cloudflare Pages link
   const cloudflareBaseURL = 'https://3dmodelsproject.pages.dev/models/';
   const fullModelURL = cloudflareBaseURL + modelUrl;
 
@@ -82,9 +78,7 @@ function loadModel() {
       model.position.set(0, -0.5, -1); // Adjust model position
       scene.add(model);
 
-      // Set up the model for interaction
       setupModelInteraction();
-
   }, undefined, function (error) {
       console.error('Error loading the model:', error);
   });
@@ -92,10 +86,14 @@ function loadModel() {
 
 // Render the scene
 function render() {
-  // Update model rotation manually or automatically (based on user interaction)
   if (model) {
-    model.rotation.x = touchRotationX; // Set x-axis rotation
-    model.rotation.y = touchRotationY; // Set y-axis rotation
+    model.rotation.x = touchRotationX; 
+    model.rotation.y = touchRotationY;
+  }
+
+  // Update AR anchor position
+  if (arAnchor) {
+    model.position.set(arAnchor.position.x, arAnchor.position.y, arAnchor.position.z);
   }
 
   renderer.render(scene, camera);
@@ -122,12 +120,25 @@ function createARButton() {
   button.addEventListener('click', () => {
       navigator.xr.requestSession('immersive-ar', { requiredFeatures: ['local-floor', 'hit-test'] })
           .then((session) => {
+              arSession = session;
               renderer.xr.setSession(session);
+
+              // Create an anchor for the model in the AR world
+              createARAnchor();
           })
           .catch(console.error);
   });
 
   return button;
+}
+
+// Set up an anchor for the AR model (so it can be manipulated)
+function createARAnchor() {
+  // Create a simple anchor (you can replace this with more complex logic based on hit test)
+  arAnchor = new THREE.Group();
+  scene.add(arAnchor);
+  arAnchor.add(model); // Attach the model to the anchor
+  model.position.set(0, -0.5, -1); // Adjust model's initial position in AR
 }
 
 // Mouse and Touch Interaction: Rotation and Zoom (for desktop)
@@ -145,12 +156,9 @@ function onMouseMove(event) {
   }
 }
 
-function onMouseUp(event) {
-  // Do nothing, but you can use this for other interactions if necessary
-}
+function onMouseUp(event) {}
 
 function onMouseWheel(event) {
-  // Zoom in and out
   if (model) {
     model.scale.set(
       model.scale.x + event.deltaY * 0.01,
@@ -181,9 +189,7 @@ function onTouchMove(event) {
   }
 }
 
-function onTouchEnd(event) {
-  // Do nothing for now, can be used for other actions
-}
+function onTouchEnd(event) {}
 
 // Handle window resizing
 window.addEventListener('resize', () => {
