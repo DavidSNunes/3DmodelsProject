@@ -16,7 +16,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // Set up the WebXR scene and AR session
-let scene, camera, renderer, controller;
+let scene, camera, renderer, controller, model, controls;
 
 // Initialize the AR scene
 function initAR() {
@@ -58,16 +58,12 @@ function loadModel() {
   const loader = new THREE.GLTFLoader();
 
   loader.load(fullModelURL, (gltf) => {
-      const model = gltf.scene;
+      model = gltf.scene;
       model.position.set(0, -0.5, -1); // Adjust model position
       scene.add(model);
       
-      // Enable basic interactions (rotation, zoom, etc.)
-      model.rotation.x = Math.PI / 4; // Example rotation to start with
-      model.scale.set(0.5, 0.5, 0.5); // Scale model to fit better in AR
-
-      // Ensure the model has controls for basic interaction like zoom and rotation
-      setupModelInteraction(model);
+      // Enable free movement interaction
+      setupModelInteraction();
 
   }, undefined, function (error) {
       console.error('Error loading the model:', error);
@@ -108,23 +104,18 @@ function createARButton() {
   return button;
 }
 
-// Enable basic interaction (rotation, zoom) for the model in AR
-function setupModelInteraction(model) {
-  // Create a simple rotation animation for the model (360-degree view)
-  let rotationSpeed = 0.01;
-  function animateRotation() {
-    model.rotation.y += rotationSpeed;
-    requestAnimationFrame(animateRotation);
-  }
-  animateRotation();
+// Enable free movement and interaction (rotation, zoom, etc.) for the model in AR
+function setupModelInteraction() {
+  // Create and enable OrbitControls to allow free movement and zooming
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.25;
+  controls.screenSpacePanning = false;
+  controls.maxPolarAngle = Math.PI / 2;  // Allow vertical movement within AR constraints
 
-  // Allow zooming in and out with mouse or pinch gestures
-  let zoomFactor = 1;
-  window.addEventListener('wheel', (event) => {
-    zoomFactor += event.deltaY * -0.01;
-    zoomFactor = Math.min(Math.max(zoomFactor, 0.1), 3); // Limit zoom range
-    camera.position.z = zoomFactor * 3; // Update camera position for zoom effect
-  });
+  // Optionally adjust model rotation and scale
+  model.rotation.set(0, Math.PI, 0);  // Set initial model rotation
+  model.scale.set(0.5, 0.5, 0.5);  // Adjust scale if necessary
 }
 
 // Handle window resizing
