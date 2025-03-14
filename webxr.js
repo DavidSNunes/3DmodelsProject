@@ -1,6 +1,10 @@
 console.log("🔧 webxr.js loaded as an ES6 module");
 
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.146/build/three.module.js';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.146/examples/jsm/loaders/GLTFLoader.js';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.146/examples/jsm/controls/OrbitControls.js';
 import { ARButton } from 'https://threejs.org/examples/jsm/webxr/ARButton.js';
+
 console.log("🔧 ARButton imported successfully");
 
 document.addEventListener("DOMContentLoaded", () => {
