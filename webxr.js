@@ -63,54 +63,52 @@ function loadModel() {
       model = gltf.scene;
       model.position.set(0, -0.5, -1); // Adjust model position
       scene.add(model);
-      addARUI(); // Add the UI elements in AR
+
+      // Add AR UI Elements
+      addARUIElements();
   }, undefined, function (error) {
       console.error('Error loading the model:', error);
   });
 }
 
-// Add floating UI elements in AR
-function addARUI() {
-  const nameText = createTextMesh(window.modelData.name || 'Unknown Model', 0.2);
-  nameText.position.set(0, 0.2, -1);
-  scene.add(nameText);
+// Add AR UI elements (name, description, link)
+function addARUIElements() {
+  const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const textLoader = new THREE.FontLoader();
 
-  const descText = createTextMesh(window.modelData.desc || 'No description available', 0.1);
-  descText.position.set(0, 0, -1);
-  scene.add(descText);
+  textLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
+      const nameGeometry = new THREE.TextGeometry(window.modelData.name || 'Unknown Model', {
+          font: font,
+          size: 0.1,
+          height: 0.01
+      });
+      const nameMesh = new THREE.Mesh(nameGeometry, textMaterial);
+      nameMesh.position.set(0, 0.5, -1);
+      scene.add(nameMesh);
 
-  const linkButton = createLinkButton('More Info', window.modelData.link || '#');
-  linkButton.position.set(0, -0.2, -1);
-  scene.add(linkButton);
-}
+      const descGeometry = new THREE.TextGeometry(window.modelData.desc || 'No description available.', {
+          font: font,
+          size: 0.05,
+          height: 0.01
+      });
+      const descMesh = new THREE.Mesh(descGeometry, textMaterial);
+      descMesh.position.set(0, 0.4, -1);
+      scene.add(descMesh);
 
-// Create 3D text mesh
-function createTextMesh(text, size) {
-  const loader = new THREE.FontLoader();
-  const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  
-  let textMesh = new THREE.Object3D();
-  loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
-      const geometry = new THREE.TextGeometry(text, { font, size, height: 0.01 });
-      textMesh = new THREE.Mesh(geometry, material);
+      // Button as a clickable plane
+      const buttonGeometry = new THREE.PlaneGeometry(0.3, 0.1);
+      const buttonMaterial = new THREE.MeshBasicMaterial({ color: 0x4CAF50 });
+      const buttonMesh = new THREE.Mesh(buttonGeometry, buttonMaterial);
+      buttonMesh.position.set(0, 0.3, -1);
+      scene.add(buttonMesh);
+
+      buttonMesh.userData.link = window.modelData.link;
+      buttonMesh.cursor = 'pointer';
+
+      buttonMesh.addEventListener('click', () => {
+          window.open(buttonMesh.userData.link, '_blank');
+      });
   });
-  
-  return textMesh;
-}
-
-// Create a clickable 3D button
-function createLinkButton(text, url) {
-  const buttonGeometry = new THREE.PlaneGeometry(0.4, 0.2);
-  const buttonMaterial = new THREE.MeshBasicMaterial({ color: 0x4CAF50 });
-  const button = new THREE.Mesh(buttonGeometry, buttonMaterial);
-
-  button.userData.url = url;
-
-  button.addEventListener('click', () => {
-      window.open(url, '_blank');
-  });
-
-  return button;
 }
 
 // Render the scene
