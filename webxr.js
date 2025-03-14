@@ -15,8 +15,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 let scene, camera, renderer, controller, model, clock, arSession, arAnchor;
-let touchStartDistance = 0;
-let initialScale = 1;
+let isModelInteracted = false;
 
 // Initialize the AR scene
 function initAR() {
@@ -64,55 +63,18 @@ function loadModel() {
       model.position.set(0, -0.5, -1); // Adjust model position
       scene.add(model);
 
-      // Add AR UI Elements
-      addARUIElements();
+      setupModelInteraction();
   }, undefined, function (error) {
       console.error('Error loading the model:', error);
   });
 }
 
-// Add AR UI elements (name, description, link)
-function addARUIElements() {
-  const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  const textLoader = new THREE.FontLoader();
-
-  textLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
-      const nameGeometry = new THREE.TextGeometry(window.modelData.name || 'Unknown Model', {
-          font: font,
-          size: 0.1,
-          height: 0.01
-      });
-      const nameMesh = new THREE.Mesh(nameGeometry, textMaterial);
-      nameMesh.position.set(0, 0.5, -1);
-      scene.add(nameMesh);
-
-      const descGeometry = new THREE.TextGeometry(window.modelData.desc || 'No description available.', {
-          font: font,
-          size: 0.05,
-          height: 0.01
-      });
-      const descMesh = new THREE.Mesh(descGeometry, textMaterial);
-      descMesh.position.set(0, 0.4, -1);
-      scene.add(descMesh);
-
-      // Button as a clickable plane
-      const buttonGeometry = new THREE.PlaneGeometry(0.3, 0.1);
-      const buttonMaterial = new THREE.MeshBasicMaterial({ color: 0x4CAF50 });
-      const buttonMesh = new THREE.Mesh(buttonGeometry, buttonMaterial);
-      buttonMesh.position.set(0, 0.3, -1);
-      scene.add(buttonMesh);
-
-      buttonMesh.userData.link = window.modelData.link;
-      buttonMesh.cursor = 'pointer';
-
-      buttonMesh.addEventListener('click', () => {
-          window.open(buttonMesh.userData.link, '_blank');
-      });
-  });
-}
-
 // Render the scene
 function render() {
+  if (arAnchor && model) {
+    model.rotation.x += 0.01; // Optional: add rotation for visual effect
+  }
+
   renderer.render(scene, camera);
 }
 
@@ -140,7 +102,7 @@ function createARButton() {
               arSession = session;
               renderer.xr.setSession(session);
 
-              // Set initial AR model position
+              // Create an anchor for the model in the AR world
               createARAnchor();
           })
           .catch(console.error);
@@ -151,11 +113,72 @@ function createARButton() {
 
 // Set up an anchor for the AR model (so it can be manipulated)
 function createARAnchor() {
+  // Create a simple anchor (you can replace this with more complex logic based on hit test)
   arAnchor = new THREE.Group();
   scene.add(arAnchor);
-  arAnchor.add(model);
-  model.position.set(0, -0.5, -1);
+  arAnchor.add(model); // Attach the model to the anchor
+  model.position.set(0, -0.5, -1); // Adjust model's initial position in AR
 }
+
+// Handle touch/mouse interaction for movement and rotation (for desktop)
+let isDragging = false;
+let dragStartX, dragStartY;
+
+function onMouseDown(event) {
+  isDragging = true;
+  dragStartX = event.clientX;
+  dragStartY = event.clientY;
+}
+
+function onMouseMove(event) {
+  if (isDragging && model) {
+    const deltaX = event.clientX - dragStartX;
+    const deltaY = event.clientY - dragStartY;
+
+    model.position.x += deltaX * 0.01; // Move model horizontally
+    model.position.y -= deltaY * 0.01; // Move model vertically
+
+    dragStartX = event.clientX;
+    dragStartY = event.clientY;
+  }
+}
+
+function onMouseUp() {
+  isDragging = false;
+}
+
+document.addEventListener('mousedown', onMouseDown, false);
+document.addEventListener('mousemove', onMouseMove, false);
+document.addEventListener('mouseup', onMouseUp, false);
+
+// Mobile touch interaction for movement
+let touchStartX, touchStartY;
+
+function onTouchStart(event) {
+  if (event.touches.length === 1) {
+    touchStartX = event.touches[0].clientX;
+    touchStartY = event.touches[0].clientY;
+  }
+}
+
+function onTouchMove(event) {
+  if (event.touches.length === 1 && model) {
+    const touchEndX = event.touches[0].clientX;
+    const touchEndY = event.touches[0].clientY;
+
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+
+    model.position.x += deltaX * 0.01; // Move model horizontally
+    model.position.y -= deltaY * 0.01; // Move model vertically
+
+    touchStartX = touchEndX;
+    touchStartY = touchEndY;
+  }
+}
+
+document.addEventListener('touchstart', onTouchStart, false);
+document.addEventListener('touchmove', onTouchMove, false);
 
 // Handle window resizing
 window.addEventListener('resize', () => {
