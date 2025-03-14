@@ -14,8 +14,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 let scene, camera, renderer, controller, model, clock, arSession, arAnchor;
-let isModelInteracted = false;
-let rotateSpeed = 0.01;  // Rotation speed for the 3D model
+let isModelPlaced = false;
 
 // Initialize the AR scene
 function initAR() {
@@ -28,12 +27,10 @@ function initAR() {
   renderer.xr.enabled = true;  // Enable WebXR
   document.body.appendChild(renderer.domElement);
 
-  // Clock for animation and movement
-  clock = new THREE.Clock();
-
   // AR Controller
   controller = renderer.xr.getController(0);
   scene.add(controller);
+  controller.addEventListener('select', onSelect); // Tap to place model
 
   // Load the model
   loadModel();
@@ -50,7 +47,7 @@ function initAR() {
 
 // Load the 3D model
 function loadModel() {
-  const modelUrl = window.modelData ? window.modelData.file : 'default.glb'; 
+  const modelUrl = window.modelData ? window.modelData.file : 'default.glb';
   console.log(`Loading model from URL: ${modelUrl}`);
 
   const cloudflareBaseURL = 'https://3dmodelsproject.pages.dev/models/';
@@ -60,10 +57,8 @@ function loadModel() {
 
   loader.load(fullModelURL, (gltf) => {
       model = gltf.scene;
-      model.position.set(0, -0.5, -1); // Adjust model position
+      model.visible = false; // Start hidden until placed
       scene.add(model);
-
-      setupModelInteraction();
   }, undefined, function (error) {
       console.error('Error loading the model:', error);
   });
@@ -71,9 +66,9 @@ function loadModel() {
 
 // Render the scene
 function render() {
-  if (model) {
-    // Rotate the model in the browser, but do not move it
-    model.rotation.y += rotateSpeed;  // Rotate model around Y-axis
+  if (model && isModelPlaced) {
+    // Allow rotation
+    model.rotation.y += 0.005;
   }
 
   renderer.render(scene, camera);
@@ -102,9 +97,6 @@ function createARButton() {
           .then((session) => {
               arSession = session;
               renderer.xr.setSession(session);
-
-              // Create an anchor for the model in the AR world
-              createARAnchor();
           })
           .catch(console.error);
   });
@@ -112,80 +104,45 @@ function createARButton() {
   return button;
 }
 
-// Set up an anchor for the AR model (so it can be manipulated)
-function createARAnchor() {
-  // Create a simple anchor (you can replace this with more complex logic based on hit test)
-  arAnchor = new THREE.Group();
-  scene.add(arAnchor);
-  arAnchor.add(model); // Attach the model to the anchor
-  model.position.set(0, -0.5, -1); // Adjust model's initial position in AR
-}
-
-// Handle touch/mouse interaction for rotating the model (no movement allowed)
-
-let dragStartX, dragStartY;
-
-function onMouseDown(event) {
-  isDragging = true;
-  dragStartX = event.clientX;
-  dragStartY = event.clientY;
-}
-
-function onMouseMove(event) {
-  if (isDragging && model) {
-    const deltaX = event.clientX - dragStartX;
-    const deltaY = event.clientY - dragStartY;
-
-    // Rotate model based on mouse movement
-    model.rotation.y += deltaX * 0.005; // Rotate around Y-axis
-    model.rotation.x += deltaY * 0.005; // Rotate around X-axis
-
-    dragStartX = event.clientX;
-    dragStartY = event.clientY;
+// Handle tap to place the model
+function onSelect() {
+  if (model && !isModelPlaced) {
+    const hitTestSource = renderer.xr.getHitTestSource();
+    if (hitTestSource) {
+      const hitTestResults = hitTestSource.getHitTestResults();
+      if (hitTestResults.length > 0) {
+        const hitPose = hitTestResults[0].getPose(renderer.xr.getReferenceSpace());
+        model.position.set(hitPose.transform.position.x, hitPose.transform.position.y, hitPose.transform.position.z);
+        model.visible = true;
+        isModelPlaced = true;
+      }
+    }
   }
 }
-
-function onMouseUp() {
-  isDragging = false;
-}
-
-document.addEventListener('mousedown', onMouseDown, false);
-document.addEventListener('mousemove', onMouseMove, false);
-document.addEventListener('mouseup', onMouseUp, false);
-
-// Mobile touch interaction for rotating the model
-let touchStartX, touchStartY;
-
-function onTouchStart(event) {
-  if (event.touches.length === 1) {
-    touchStartX = event.touches[0].clientX;
-    touchStartY = event.touches[0].clientY;
-  }
-}
-
-function onTouchMove(event) {
-  if (event.touches.length === 1 && model) {
-    const touchEndX = event.touches[0].clientX;
-    const touchEndY = event.touches[0].clientY;
-
-    const deltaX = touchEndX - touchStartX;
-    const deltaY = touchEndY - touchStartY;
-
-    // Rotate model based on touch movement
-    model.rotation.y += deltaX * 0.005; // Rotate around Y-axis
-    model.rotation.x += deltaY * 0.005; // Rotate around X-axis
-
-    touchStartX = touchEndX;
-    touchStartY = touchEndY;
-  }
-}
-
-document.addEventListener('touchstart', onTouchStart, false);
-document.addEventListener('touchmove', onTouchMove, false);
 
 // Handle window resizing
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Pinch-to-zoom functionality
+let initialDistance = null;
+
+window.addEventListener('touchmove', (event) => {
+  if (isModelPlaced && event.touches.length === 2) {
+    const dx = event.touches[0].pageX - event.touches[1].pageX;
+    const dy = event.touches[0].pageY - event.touches[1].pageY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (!initialDistance) initialDistance = distance;
+
+    const scaleFactor = distance / initialDistance;
+    model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+  }
+});
+
+window.addEventListener('touchend', () => {
+  initialDistance = null;
 });
