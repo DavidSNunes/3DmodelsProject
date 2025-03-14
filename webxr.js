@@ -16,8 +16,12 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // Set up the WebXR scene and AR session
-let scene, camera, renderer, controller, model, clock, raycaster;
+let scene, camera, renderer, controller, model, clock;
 let isModelInteracted = false;
+let touchStartX = 0;
+let touchStartY = 0;
+let touchRotationX = 0;
+let touchRotationY = 0;
 
 // Initialize the AR scene
 function initAR() {
@@ -31,15 +35,12 @@ function initAR() {
   renderer.xr.enabled = true;  // Enable WebXR
   document.body.appendChild(renderer.domElement);
 
-  // AR Controller
-  controller = renderer.xr.getController(0);
-  scene.add(controller);
-
   // Clock for animation and movement
   clock = new THREE.Clock();
 
-  // Raycaster for controlling model movement and interaction
-  raycaster = new THREE.Raycaster();
+  // AR Controller
+  controller = renderer.xr.getController(0);
+  scene.add(controller);
 
   // Load the model
   loadModel();
@@ -50,6 +51,12 @@ function initAR() {
 
   // Add AR Button
   document.body.appendChild(createARButton());
+
+  // Handle touch/mouse interaction for rotation and zoom
+  document.addEventListener('mousedown', onMouseDown, false);
+  document.addEventListener('mousemove', onMouseMove, false);
+  document.addEventListener('mouseup', onMouseUp, false);
+  document.addEventListener('wheel', onMouseWheel, false);
 
   renderer.setAnimationLoop(render);
 }
@@ -80,9 +87,10 @@ function loadModel() {
 
 // Render the scene
 function render() {
-  // Rotate the model for free interaction (basic movement behavior)
+  // Update model rotation manually or automatically (based on user interaction)
   if (model) {
-    model.rotation.y += 0.01; // Auto rotate (optional, remove if you want to handle manually)
+    model.rotation.x = touchRotationX; // Set x-axis rotation
+    model.rotation.y = touchRotationY; // Set y-axis rotation
   }
 
   renderer.render(scene, camera);
@@ -117,53 +125,34 @@ function createARButton() {
   return button;
 }
 
-// Setup model interaction for rotation, scaling, and movement
-function setupModelInteraction() {
-  // Add logic to interact with the model via raycasting
-  controller.addEventListener('selectstart', onSelectStart);
-  controller.addEventListener('selectend', onSelectEnd);
+// Mouse and Touch Interaction: Rotation and Zoom
+function onMouseDown(event) {
+  touchStartX = event.clientX;
+  touchStartY = event.clientY;
 }
 
-// Select start (touch or controller press down)
-function onSelectStart(event) {
-  const controller = event.target;
-  const controllerRay = new THREE.Raycaster();
-
-  // Set up ray direction and intersection with model
-  controllerRay.ray.origin.copy(controller.position);
-  controllerRay.ray.direction.copy(controller.rotation);
-
-  // Hit-test logic for selecting and moving the model
-  const intersections = getIntersections(controllerRay);
-
-  if (intersections.length > 0) {
-    isModelInteracted = true; // Start interaction with the model
-    const intersection = intersections[0];
-    model.position.copy(intersection.point);
+function onMouseMove(event) {
+  if (event.buttons === 1) { // Left click or touch dragging
+    touchRotationX += (event.clientY - touchStartY) * 0.01;
+    touchRotationY += (event.clientX - touchStartX) * 0.01;
+    touchStartX = event.clientX;
+    touchStartY = event.clientY;
   }
 }
 
-// Select end (touch or controller release)
-function onSelectEnd() {
-  isModelInteracted = false; // Stop interaction when released
+function onMouseUp(event) {
+  // Do nothing, but you can use this for other interactions if necessary
 }
 
-// Get intersections (detect where the controller's ray intersects objects in the scene)
-function getIntersections(ray) {
-  const intersects = [];
-  const objects = [model]; // Add any other interactable objects here
-
-  // Check intersection with model
-  for (let i = 0; i < objects.length; i++) {
-    const object = objects[i];
-    const intersectsObject = ray.intersectObject(object);
-
-    if (intersectsObject.length > 0) {
-      intersects.push(intersectsObject[0]);
-    }
+function onMouseWheel(event) {
+  // Zoom in and out
+  if (model) {
+    model.scale.set(
+      model.scale.x + event.deltaY * 0.01,
+      model.scale.y + event.deltaY * 0.01,
+      model.scale.z + event.deltaY * 0.01
+    );
   }
-
-  return intersects;
 }
 
 // Handle window resizing
