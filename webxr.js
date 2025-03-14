@@ -16,7 +16,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // Set up the WebXR scene and AR session
-let scene, camera, renderer, controller, model, controls;
+let scene, camera, renderer, controller, model;
 
 // Initialize the AR scene
 function initAR() {
@@ -61,8 +61,8 @@ function loadModel() {
       model = gltf.scene;
       model.position.set(0, -0.5, -1); // Adjust model position
       scene.add(model);
-      
-      // Enable free movement interaction
+
+      // Setup the model's interaction (position, rotation, and scaling in AR)
       setupModelInteraction();
 
   }, undefined, function (error) {
@@ -104,18 +104,55 @@ function createARButton() {
   return button;
 }
 
-// Enable free movement and interaction (rotation, zoom, etc.) for the model in AR
+// Setup model interaction for rotation, scaling, and movement
 function setupModelInteraction() {
-  // Create and enable OrbitControls to allow free movement and zooming
-  controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.25;
-  controls.screenSpacePanning = false;
-  controls.maxPolarAngle = Math.PI / 2;  // Allow vertical movement within AR constraints
+  // Handle user interactions with touch or controller events
+  // Here we're adjusting the position and rotation dynamically using the XR controller
 
-  // Optionally adjust model rotation and scale
-  model.rotation.set(0, Math.PI, 0);  // Set initial model rotation
-  model.scale.set(0.5, 0.5, 0.5);  // Adjust scale if necessary
+  controller.addEventListener('selectstart', onSelectStart);
+  controller.addEventListener('selectend', onSelectEnd);
+}
+
+// Select start (touch or controller press down)
+function onSelectStart(event) {
+  const controller = event.target;
+  const controllerRay = new THREE.Raycaster();
+  
+  // Setup interaction logic (e.g., change model position, rotation)
+  controllerRay.ray.origin.copy(controller.position);
+  controllerRay.ray.direction.copy(controller.rotation);
+
+  // Hit-test logic for selecting and moving the model
+  const intersections = getIntersections(controllerRay);
+  
+  if (intersections.length > 0) {
+    const intersection = intersections[0];
+    // Move the model to where the user touched or interacted
+    model.position.copy(intersection.point);
+  }
+}
+
+// Select end (touch or controller release)
+function onSelectEnd() {
+  // Implement logic when the user releases the selection (e.g., stop moving the model)
+}
+
+// Get intersections (detect where the controller's ray intersects objects in the scene)
+function getIntersections(ray) {
+  const intersects = [];
+  const objects = [model]; // Add any other interactable objects here
+
+  // Check intersection with model
+  for (let i = 0; i < objects.length; i++) {
+    const object = objects[i];
+    const intersectsObject = ray.intersectObject(object);
+
+    if (intersectsObject.length > 0) {
+      intersects.push(intersectsObject[0]);
+    }
+  }
+  
+  return intersects;
 }
 
 // Handle window resizing
