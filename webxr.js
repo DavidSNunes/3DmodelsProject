@@ -15,11 +15,8 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 let scene, camera, renderer, controller, model, clock, arSession, arAnchor;
-let isModelInteracted = false;
-let touchStartX = 0;
-let touchStartY = 0;
-let touchRotationX = 0;
-let touchRotationY = 0;
+let touchStartDistance = 0;
+let initialScale = 1;
 
 // Initialize the AR scene
 function initAR() {
@@ -49,17 +46,6 @@ function initAR() {
   // Add AR Button
   document.body.appendChild(createARButton());
 
-  // Handle touch/mouse interaction for rotation and zoom
-  document.addEventListener('mousedown', onMouseDown, false);
-  document.addEventListener('mousemove', onMouseMove, false);
-  document.addEventListener('mouseup', onMouseUp, false);
-  document.addEventListener('wheel', onMouseWheel, false);
-
-  // Handle touch events for mobile
-  document.addEventListener('touchstart', onTouchStart, false);
-  document.addEventListener('touchmove', onTouchMove, false);
-  document.addEventListener('touchend', onTouchEnd, false);
-
   renderer.setAnimationLoop(render);
 }
 
@@ -77,25 +63,58 @@ function loadModel() {
       model = gltf.scene;
       model.position.set(0, -0.5, -1); // Adjust model position
       scene.add(model);
-
-      setupModelInteraction();
+      addARUI(); // Add the UI elements in AR
   }, undefined, function (error) {
       console.error('Error loading the model:', error);
   });
 }
 
+// Add floating UI elements in AR
+function addARUI() {
+  const nameText = createTextMesh(window.modelData.name || 'Unknown Model', 0.2);
+  nameText.position.set(0, 0.2, -1);
+  scene.add(nameText);
+
+  const descText = createTextMesh(window.modelData.desc || 'No description available', 0.1);
+  descText.position.set(0, 0, -1);
+  scene.add(descText);
+
+  const linkButton = createLinkButton('More Info', window.modelData.link || '#');
+  linkButton.position.set(0, -0.2, -1);
+  scene.add(linkButton);
+}
+
+// Create 3D text mesh
+function createTextMesh(text, size) {
+  const loader = new THREE.FontLoader();
+  const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  
+  let textMesh = new THREE.Object3D();
+  loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
+      const geometry = new THREE.TextGeometry(text, { font, size, height: 0.01 });
+      textMesh = new THREE.Mesh(geometry, material);
+  });
+  
+  return textMesh;
+}
+
+// Create a clickable 3D button
+function createLinkButton(text, url) {
+  const buttonGeometry = new THREE.PlaneGeometry(0.4, 0.2);
+  const buttonMaterial = new THREE.MeshBasicMaterial({ color: 0x4CAF50 });
+  const button = new THREE.Mesh(buttonGeometry, buttonMaterial);
+
+  button.userData.url = url;
+
+  button.addEventListener('click', () => {
+      window.open(url, '_blank');
+  });
+
+  return button;
+}
+
 // Render the scene
 function render() {
-  if (model) {
-    model.rotation.x = touchRotationX; 
-    model.rotation.y = touchRotationY;
-  }
-
-  // Update AR anchor position
-  if (arAnchor) {
-    model.position.set(arAnchor.position.x, arAnchor.position.y, arAnchor.position.z);
-  }
-
   renderer.render(scene, camera);
 }
 
@@ -122,7 +141,9 @@ function createARButton() {
           .then((session) => {
               arSession = session;
               renderer.xr.setSession(session);
-              setupTapToPlace();
+
+              // Set initial AR model position
+              createARAnchor();
           })
           .catch(console.error);
   });
@@ -130,65 +151,13 @@ function createARButton() {
   return button;
 }
 
-// Setup tap-to-place functionality
-function setupTapToPlace() {
-  controller.addEventListener('select', (event) => {
-    const frame = event.frame;
-    const hitTestResults = frame.getHitTestResults(event.inputSource.targetRaySpace);
-
-    if (hitTestResults.length > 0) {
-      const hit = hitTestResults[0];
-      const pose = hit.getPose(renderer.xr.getReferenceSpace());
-      model.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
-    }
-  });
+// Set up an anchor for the AR model (so it can be manipulated)
+function createARAnchor() {
+  arAnchor = new THREE.Group();
+  scene.add(arAnchor);
+  arAnchor.add(model);
+  model.position.set(0, -0.5, -1);
 }
-
-// Mouse and Touch Interaction: Rotation and Zoom (for desktop)
-function onMouseDown(event) {
-  touchStartX = event.clientX;
-  touchStartY = event.clientY;
-}
-
-function onMouseMove(event) {
-  if (event.buttons === 1) { // Left click or touch dragging
-    touchRotationX += (event.clientY - touchStartY) * 0.01;
-    touchRotationY += (event.clientX - touchStartX) * 0.01;
-    touchStartX = event.clientX;
-    touchStartY = event.clientY;
-  }
-}
-
-function onMouseUp(event) {}
-
-function onMouseWheel(event) {
-  if (model) {
-    model.scale.multiplyScalar(1 + event.deltaY * -0.01);
-  }
-}
-
-// Mobile touch interaction
-function onTouchStart(event) {
-  if (event.touches.length === 1) {
-    touchStartX = event.touches[0].clientX;
-    touchStartY = event.touches[0].clientY;
-  }
-}
-
-function onTouchMove(event) {
-  if (event.touches.length === 1) {
-    const touchEndX = event.touches[0].clientX;
-    const touchEndY = event.touches[0].clientY;
-
-    touchRotationX += (touchEndY - touchStartY) * 0.01;
-    touchRotationY += (touchEndX - touchStartX) * 0.01;
-
-    touchStartX = touchEndX;
-    touchStartY = touchEndY;
-  }
-}
-
-function onTouchEnd(event) {}
 
 // Handle window resizing
 window.addEventListener('resize', () => {
