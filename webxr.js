@@ -1,22 +1,41 @@
-let scene, camera, renderer, controller, model, controls;
+// Ensure model data is available and proceed with loading
+window.addEventListener('DOMContentLoaded', () => {
+  if (window.modelData) {
+      // Log model data to make sure it's being passed correctly
+      console.log('Model data passed to WebXR:', window.modelData);
 
+      // Update UI elements with model info
+      document.getElementById('product-name').innerText = window.modelData.name || 'Loading...';
+      document.getElementById('product-desc').innerText = window.modelData.desc || 'Please wait while we load your model.';
+      document.getElementById('product-link').href = window.modelData.link || '#';
+      
+      initAR(); // Initialize AR after ensuring model data is ready
+  } else {
+      console.log('No model data found');
+  }
+});
+
+// Set up the WebXR scene and AR session
+let scene, camera, renderer, controller;
+
+// Initialize the AR scene
 function initAR() {
   scene = new THREE.Scene();
-  
+
   camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
   scene.add(camera);
-  
+
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.xr.enabled = true;
   document.body.appendChild(renderer.domElement);
-  
+
   controller = renderer.xr.getController(0);
   scene.add(controller);
 
   // Load the model
   loadModel();
-  
+
   // Add a light source
   const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
   scene.add(light);
@@ -24,76 +43,38 @@ function initAR() {
   // Add AR Button
   document.body.appendChild(createARButton());
 
-  // Initialize controls (to move/rotate model)
-  initControls();
-
   renderer.setAnimationLoop(render);
 }
 
 // Load the 3D model
 function loadModel() {
-  const modelUrl = window.modelData ? window.modelData.file : 'default.glb';
+  const modelUrl = window.modelData ? window.modelData.file : 'default.glb'; // Ensure we're using the model URL from modelData
   console.log(`Loading model from URL: ${modelUrl}`);
-  
+
+  // Update model URL to use the Cloudflare Pages link
   const cloudflareBaseURL = 'https://3dmodelsproject.pages.dev/models/';
   const fullModelURL = cloudflareBaseURL + modelUrl;
 
   const loader = new THREE.GLTFLoader();
+
   loader.load(fullModelURL, (gltf) => {
-    model = gltf.scene;
-    model.position.set(0, -0.5, -1);
-    scene.add(model);
+      const model = gltf.scene;
+      model.position.set(0, -0.5, -1);
+      scene.add(model);
+
+      // Enable model interaction for touch devices
+      if (isMobile()) {
+        addTouchControls(model);
+      }
+
   }, undefined, function (error) {
-    console.error('Error loading the model:', error);
+      console.error('Error loading the model:', error);
   });
 }
 
-// Initialize model controls (for web interactions)
-function initControls() {
-  if (isMobile()) {
-    addTouchControls(model); // Add touch-based control on mobile
-  } else {
-    controls = new THREE.OrbitControls(camera, renderer.domElement); // Add OrbitControls for PC
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.25;
-    controls.enableZoom = true;
-    controls.enablePan = true;
-  }
-}
-
-// Add touch controls for mobile devices
-function addTouchControls(model) {
-  let isTouching = false;
-  let lastTouchX = 0;
-  let lastTouchY = 0;
-
-  renderer.domElement.addEventListener('touchstart', (event) => {
-    isTouching = true;
-    lastTouchX = event.touches[0].clientX;
-    lastTouchY = event.touches[0].clientY;
-  });
-
-  renderer.domElement.addEventListener('touchmove', (event) => {
-    if (isTouching) {
-      const deltaX = event.touches[0].clientX - lastTouchX;
-      const deltaY = event.touches[0].clientY - lastTouchY;
-
-      model.rotation.y += deltaX * 0.01;
-      model.rotation.x += deltaY * 0.01;
-
-      lastTouchX = event.touches[0].clientX;
-      lastTouchY = event.touches[0].clientY;
-    }
-  });
-
-  renderer.domElement.addEventListener('touchend', () => {
-    isTouching = false;
-  });
-}
-
-// Detect if the device is mobile
-function isMobile() {
-  return /Mobi|Android/i.test(navigator.userAgent);
+// Render the scene
+function render() {
+  renderer.render(scene, camera);
 }
 
 // Create an AR button
@@ -113,21 +94,51 @@ function createARButton() {
   button.style.cursor = 'pointer';
   button.style.zIndex = '1000';
 
+  // Set up AR session when clicked
   button.addEventListener('click', () => {
-    navigator.xr.requestSession('immersive-ar', { requiredFeatures: ['local-floor', 'hit-test'] })
-      .then((session) => {
-        renderer.xr.setSession(session);
-      })
-      .catch(console.error);
+      navigator.xr.requestSession('immersive-ar', { requiredFeatures: ['local-floor', 'hit-test'] })
+          .then((session) => {
+              renderer.xr.setSession(session);
+          })
+          .catch(console.error);
   });
 
   return button;
 }
 
-// Render the scene
-function render() {
-  if (controls) controls.update(); // Update the controls (if available)
-  renderer.render(scene, camera);
+// Detect if the device is mobile
+function isMobile() {
+  return /Mobi|Android/i.test(navigator.userAgent);
+}
+
+// Add touch controls to the model for mobile interaction
+function addTouchControls(model) {
+  let isTouching = false;
+  let lastTouchX = 0;
+  let lastTouchY = 0;
+
+  renderer.domElement.addEventListener('touchstart', (event) => {
+    isTouching = true;
+    lastTouchX = event.touches[0].clientX;
+    lastTouchY = event.touches[0].clientY;
+  });
+
+  renderer.domElement.addEventListener('touchmove', (event) => {
+    if (isTouching) {
+      const deltaX = event.touches[0].clientX - lastTouchX;
+      const deltaY = event.touches[0].clientY - lastTouchY;
+
+      model.rotation.y += deltaX * 0.01; // Rotate the model based on horizontal touch movement
+      model.rotation.x += deltaY * 0.01; // Rotate the model based on vertical touch movement
+
+      lastTouchX = event.touches[0].clientX;
+      lastTouchY = event.touches[0].clientY;
+    }
+  });
+
+  renderer.domElement.addEventListener('touchend', () => {
+    isTouching = false;
+  });
 }
 
 // Handle window resizing
