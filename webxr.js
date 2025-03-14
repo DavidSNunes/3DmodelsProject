@@ -16,10 +16,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
 let scene, camera, renderer, controller, model, clock, arSession, arAnchor;
 let isModelInteracted = false;
-let touchStartX = 0;
-let touchStartY = 0;
-let touchRotationX = 0;
-let touchRotationY = 0;
 
 // Initialize the AR scene
 function initAR() {
@@ -49,17 +45,6 @@ function initAR() {
   // Add AR Button
   document.body.appendChild(createARButton());
 
-  // Handle touch/mouse interaction for rotation and zoom
-  document.addEventListener('mousedown', onMouseDown, false);
-  document.addEventListener('mousemove', onMouseMove, false);
-  document.addEventListener('mouseup', onMouseUp, false);
-  document.addEventListener('wheel', onMouseWheel, false);
-
-  // Handle touch events for mobile
-  document.addEventListener('touchstart', onTouchStart, false);
-  document.addEventListener('touchmove', onTouchMove, false);
-  document.addEventListener('touchend', onTouchEnd, false);
-
   renderer.setAnimationLoop(render);
 }
 
@@ -86,14 +71,8 @@ function loadModel() {
 
 // Render the scene
 function render() {
-  if (model) {
-    model.rotation.x = touchRotationX; 
-    model.rotation.y = touchRotationY;
-  }
-
-  // Update AR anchor position
-  if (arAnchor) {
-    model.position.set(arAnchor.position.x, arAnchor.position.y, arAnchor.position.z);
+  if (arAnchor && model) {
+    model.rotation.x += 0.01; // Optional: add rotation for visual effect
   }
 
   renderer.render(scene, camera);
@@ -141,34 +120,40 @@ function createARAnchor() {
   model.position.set(0, -0.5, -1); // Adjust model's initial position in AR
 }
 
-// Mouse and Touch Interaction: Rotation and Zoom (for desktop)
+// Handle touch/mouse interaction for movement and rotation (for desktop)
+let isDragging = false;
+let dragStartX, dragStartY;
+
 function onMouseDown(event) {
-  touchStartX = event.clientX;
-  touchStartY = event.clientY;
+  isDragging = true;
+  dragStartX = event.clientX;
+  dragStartY = event.clientY;
 }
 
 function onMouseMove(event) {
-  if (event.buttons === 1) { // Left click or touch dragging
-    touchRotationX += (event.clientY - touchStartY) * 0.01;
-    touchRotationY += (event.clientX - touchStartX) * 0.01;
-    touchStartX = event.clientX;
-    touchStartY = event.clientY;
+  if (isDragging && model) {
+    const deltaX = event.clientX - dragStartX;
+    const deltaY = event.clientY - dragStartY;
+
+    model.position.x += deltaX * 0.01; // Move model horizontally
+    model.position.y -= deltaY * 0.01; // Move model vertically
+
+    dragStartX = event.clientX;
+    dragStartY = event.clientY;
   }
 }
 
-function onMouseUp(event) {}
-
-function onMouseWheel(event) {
-  if (model) {
-    model.scale.set(
-      model.scale.x + event.deltaY * 0.01,
-      model.scale.y + event.deltaY * 0.01,
-      model.scale.z + event.deltaY * 0.01
-    );
-  }
+function onMouseUp() {
+  isDragging = false;
 }
 
-// Mobile touch interaction
+document.addEventListener('mousedown', onMouseDown, false);
+document.addEventListener('mousemove', onMouseMove, false);
+document.addEventListener('mouseup', onMouseUp, false);
+
+// Mobile touch interaction for movement
+let touchStartX, touchStartY;
+
 function onTouchStart(event) {
   if (event.touches.length === 1) {
     touchStartX = event.touches[0].clientX;
@@ -177,19 +162,23 @@ function onTouchStart(event) {
 }
 
 function onTouchMove(event) {
-  if (event.touches.length === 1) {
+  if (event.touches.length === 1 && model) {
     const touchEndX = event.touches[0].clientX;
     const touchEndY = event.touches[0].clientY;
 
-    touchRotationX += (touchEndY - touchStartY) * 0.01;
-    touchRotationY += (touchEndX - touchStartX) * 0.01;
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+
+    model.position.x += deltaX * 0.01; // Move model horizontally
+    model.position.y -= deltaY * 0.01; // Move model vertically
 
     touchStartX = touchEndX;
     touchStartY = touchEndY;
   }
 }
 
-function onTouchEnd(event) {}
+document.addEventListener('touchstart', onTouchStart, false);
+document.addEventListener('touchmove', onTouchMove, false);
 
 // Handle window resizing
 window.addEventListener('resize', () => {
