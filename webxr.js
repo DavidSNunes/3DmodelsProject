@@ -122,7 +122,7 @@ function createARAnchor() {
 }
 
 // Handle touch/mouse interaction for rotating the model (no movement allowed)
-let isDragging = false;
+
 let dragStartX, dragStartY;
 
 function onMouseDown(event) {
