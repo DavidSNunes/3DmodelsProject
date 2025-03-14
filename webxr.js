@@ -1,29 +1,85 @@
-// Step 1: Show model data (this part was working, so we keep it intact)
-function displayModelData(modelData) {
-  console.log('Model data passed to WebXR:', modelData);
-  const modelInfo = document.getElementById('model-info');
-  if (modelInfo) {
-      modelInfo.innerHTML = `
-          <h3>${modelData.name}</h3>
-          <p>${modelData.desc}</p>
-          <a href="${modelData.link}" target="_blank">Buy Now</a>
-      `;
+// Ensure model data is available and proceed with loading
+window.addEventListener('DOMContentLoaded', () => {
+  if (window.modelData) {
+      // Log model data to make sure it's being passed correctly
+      console.log('Model data passed to WebXR:', window.modelData);
+
+      // Update UI elements with model info
+      document.getElementById('product-name').innerText = window.modelData.name || 'Loading...';
+      document.getElementById('product-desc').innerText = window.modelData.desc || 'Please wait while we load your model.';
+      document.getElementById('product-link').href = window.modelData.link || '#';
+      
+      initAR(); // Initialize AR after ensuring model data is ready
+  } else {
+      console.log('No model data found');
   }
+});
+
+// Set up the WebXR scene and AR session
+let scene, camera, renderer, controller;
+
+// Initialize the AR scene
+function initAR() {
+  scene = new THREE.Scene();
+
+  camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+  scene.add(camera);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.xr.enabled = true;  // Enable WebXR
+  document.body.appendChild(renderer.domElement);
+
+  controller = renderer.xr.getController(0);
+  scene.add(controller);
+
+  // Load the model
+  loadModel();
+
+  // Add a light source
+  const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+  scene.add(light);
+
+  // Add AR Button
+  document.body.appendChild(createARButton());
+
+  renderer.setAnimationLoop(render);
 }
 
-// Step 2: Fix Model URL Loading
-function loadModel(modelUrl) {
+// Load the 3D model
+function loadModel() {
+  const modelUrl = window.modelData ? window.modelData.file : 'default.glb'; // Ensure we're using the model URL from modelData
+  console.log(`Loading model from URL: ${modelUrl}`);
+
+  // Update model URL to use the Cloudflare Pages link
+  const cloudflareBaseURL = 'https://3dmodelsproject.pages.dev/models/';
+  const fullModelURL = cloudflareBaseURL + modelUrl;
+
   const loader = new THREE.GLTFLoader();
-  const modelPath = `https://3dmodelsproject.pages.dev/models/${modelUrl}`; // Fixed model URL path
-  console.log(`Loading model from URL: ${modelPath}`);
-  loader.load(modelPath, (gltf) => {
-      scene.add(gltf.scene); // Add model to the scene
-  }, undefined, (error) => {
-      console.error('Error loading model:', error);
+
+  loader.load(fullModelURL, (gltf) => {
+      const model = gltf.scene;
+      model.position.set(0, -0.5, -1); // Adjust model position
+      scene.add(model);
+      
+      // Enable basic interactions (rotation, zoom, etc.)
+      model.rotation.x = Math.PI / 4; // Example rotation to start with
+      model.scale.set(0.5, 0.5, 0.5); // Scale model to fit better in AR
+
+      // Ensure the model has controls for basic interaction like zoom and rotation
+      setupModelInteraction(model);
+
+  }, undefined, function (error) {
+      console.error('Error loading the model:', error);
   });
 }
 
-// Step 3: Create AR Button for WebXR Session
+// Render the scene
+function render() {
+  renderer.render(scene, camera);
+}
+
+// Create an AR button
 function createARButton() {
   const button = document.createElement('button');
   button.innerText = 'Start AR';
@@ -42,53 +98,38 @@ function createARButton() {
 
   // Set up AR session when clicked
   button.addEventListener('click', () => {
-      if (navigator.xr) {
-          navigator.xr.requestSession('immersive-ar', {
-              requiredFeatures: ['local-floor'],
-              optionalFeatures: ['hit-test'] // Optional feature for additional interactions
-          })
+      navigator.xr.requestSession('immersive-ar', { requiredFeatures: ['local-floor', 'hit-test'] })
           .then((session) => {
               renderer.xr.setSession(session);
-              document.body.appendChild(button); // Add the button to the page after AR is initialized
           })
-          .catch((error) => {
-              console.error('AR session request failed:', error);
-          });
-      } else {
-          console.error('WebXR is not supported on this device.');
-      }
+          .catch(console.error);
   });
 
   return button;
 }
 
-// Step 4: Initialize WebXR and the scene
-const button = createARButton();
-document.body.appendChild(button);
+// Enable basic interaction (rotation, zoom) for the model in AR
+function setupModelInteraction(model) {
+  // Create a simple rotation animation for the model (360-degree view)
+  let rotationSpeed = 0.01;
+  function animateRotation() {
+    model.rotation.y += rotationSpeed;
+    requestAnimationFrame(animateRotation);
+  }
+  animateRotation();
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
-
-// Initialize AR environment with the simplest configuration
-function animate() {
-  renderer.render(scene, camera);
-  requestAnimationFrame(animate);
+  // Allow zooming in and out with mouse or pinch gestures
+  let zoomFactor = 1;
+  window.addEventListener('wheel', (event) => {
+    zoomFactor += event.deltaY * -0.01;
+    zoomFactor = Math.min(Math.max(zoomFactor, 0.1), 3); // Limit zoom range
+    camera.position.z = zoomFactor * 3; // Update camera position for zoom effect
+  });
 }
-animate();
 
-// Load model once you have the correct model data
-const modelData = {
-  name: "TV Hisense 55A6N",
-  desc: "Perfeita para quem gosta do Discovery Channel",
-  file: "tv-hisense.glb",
-  link: "https://www.worten.pt/produtos/tv-hisense-55a6n-led-55-140-cm-4k-ultra-hd-smart-tv-8022846"
-};
-
-// Show model data
-displayModelData(modelData);
-
-// Step 5: Load the model when AR session is triggered
-loadModel(modelData.file); // Pass the model filename to load the model correctly
+// Handle window resizing
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
