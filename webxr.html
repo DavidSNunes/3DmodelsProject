@@ -22,26 +22,20 @@
             text-decoration: none;
         }
     </style>
-
-    <!-- ✅ Load Three.js (no imports) -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js"></script>
-
-    <!-- ✅ Load GLTFLoader and OrbitControls -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.154.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.154.0/examples/js/controls/OrbitControls.js"></script>
-
-    <!-- ✅ Load WebXR ARButton -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.154.0/examples/jsm/webxr/ARButton.js"></script>
+    <!-- Load Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146/build/three.min.js"></script>
+    <!-- Load GLTFLoader -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/loaders/GLTFLoader.js"></script>
+    <!-- Load OrbitControls -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/controls/OrbitControls.js"></script>
 </head>
-
 <body>
     <div class="ui-container">
         <h2 id="product-name">Loading...</h2>
         <p id="product-desc">Please wait while we load your model.</p>
         <a id="product-link" href="#" target="_blank">View Product</a>
     </div>
-
-    <!-- ✅ Load WebXR script -->
-    <script src="/webxr.js"></script>
+    <!-- Load webxr.js as an ES6 module -->
+    <script type="module" src="/webxr.js"></script>
 </body>
 </html>
