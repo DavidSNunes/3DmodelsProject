@@ -22,7 +22,7 @@ function initAR() {
     const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
     scene.add(light);
 
-    // Start the XR session
+    // Start the XR session by creating an AR button
     document.body.appendChild(createARButton());
     renderer.setAnimationLoop(render);
 }
@@ -44,7 +44,7 @@ function render() {
     renderer.render(scene, camera);
 }
 
-// Create an AR button without imports
+// Create an AR button
 function createARButton() {
     const button = document.createElement('button');
     button.innerText = 'Start AR';
@@ -61,6 +61,7 @@ function createARButton() {
     button.style.cursor = 'pointer';
     button.style.zIndex = '1000';
 
+    // Set up the AR session when the button is clicked
     button.addEventListener('click', () => {
         navigator.xr.requestSession('immersive-ar', { requiredFeatures: ['local-floor', 'hit-test'] })
             .then((session) => {
