@@ -58,6 +58,11 @@ function initAR() {
   document.addEventListener('mouseup', onMouseUp, false);
   document.addEventListener('wheel', onMouseWheel, false);
 
+  // Handle touch events for mobile
+  document.addEventListener('touchstart', onTouchStart, false);
+  document.addEventListener('touchmove', onTouchMove, false);
+  document.addEventListener('touchend', onTouchEnd, false);
+
   renderer.setAnimationLoop(render);
 }
 
@@ -125,7 +130,7 @@ function createARButton() {
   return button;
 }
 
-// Mouse and Touch Interaction: Rotation and Zoom
+// Mouse and Touch Interaction: Rotation and Zoom (for desktop)
 function onMouseDown(event) {
   touchStartX = event.clientX;
   touchStartY = event.clientY;
@@ -153,6 +158,31 @@ function onMouseWheel(event) {
       model.scale.z + event.deltaY * 0.01
     );
   }
+}
+
+// Mobile touch interaction
+function onTouchStart(event) {
+  if (event.touches.length === 1) {
+    touchStartX = event.touches[0].clientX;
+    touchStartY = event.touches[0].clientY;
+  }
+}
+
+function onTouchMove(event) {
+  if (event.touches.length === 1) {
+    const touchEndX = event.touches[0].clientX;
+    const touchEndY = event.touches[0].clientY;
+
+    touchRotationX += (touchEndY - touchStartY) * 0.01;
+    touchRotationY += (touchEndX - touchStartX) * 0.01;
+
+    touchStartX = touchEndX;
+    touchStartY = touchEndY;
+  }
+}
+
+function onTouchEnd(event) {
+  // Do nothing for now, can be used for other actions
 }
 
 // Handle window resizing
