@@ -1,4 +1,8 @@
-import { ARButton } from 'https://threejs.org/examples/jsm/webxr/ARButton.js';
+// webxr.js
+import { ARButton } from "https://cdn.jsdelivr.net/npm/three@0.146/examples/jsm/webxr/ARButton.js";
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.146/build/three.module.js";
+import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.146/examples/jsm/loaders/GLTFLoader.js";
+import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.146/examples/jsm/controls/OrbitControls.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   if (!window.modelData) {
@@ -38,7 +42,7 @@ function loadModel(file) {
   scene.add(light);
 
   // Load the model
-  const loader = new THREE.GLTFLoader();
+  const loader = new GLTFLoader();
   loader.load(
     `https://3dmodelsproject.pages.dev/models/${file}`,
     (gltf) => {
@@ -49,7 +53,7 @@ function loadModel(file) {
       const box = new THREE.Box3().setFromObject(model);
       const center = new THREE.Vector3();
       box.getCenter(center);
-      model.position.sub(center); // Center the model
+      model.position.sub(center);
 
       // Adjust the camera to fit the model
       const size = box.getSize(new THREE.Vector3()).length();
@@ -60,16 +64,16 @@ function loadModel(file) {
       camera.position.z = cameraZ;
 
       // Set up orbit controls
-      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true; // Smooth movement
       controls.dampingFactor = 0.25;
       controls.screenSpacePanning = false;
-      controls.minDistance = 1; // Prevent zooming too close
-      controls.maxDistance = 100; // Prevent zooming too far
-      controls.maxPolarAngle = Math.PI / 2; // Prevent flipping the model
+      controls.minDistance = 1;
+      controls.maxDistance = 100;
+      controls.maxPolarAngle = Math.PI / 2;
 
       // Add AR button
-      const arButton = ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] });
+      const arButton = ARButton.createButton(renderer, { requiredFeatures: ["hit-test"] });
       document.body.appendChild(arButton);
 
       // Enable WebXR
@@ -78,7 +82,7 @@ function loadModel(file) {
       // Render the scene
       const animate = () => {
         requestAnimationFrame(animate);
-        controls.update(); // Required if controls.enableDamping is true
+        controls.update();
         renderer.render(scene, camera);
       };
       animate();
