@@ -18,8 +18,7 @@ let scene, camera, renderer, controller, model, clock, arSession, arAnchor;
 let isModelInteracted = false;
 let touchStartX = 0;
 let touchStartY = 0;
-let touchRotationX = 0;
-let touchRotationY = 0;
+let touchZoomDistance = 0;
 
 // Initialize the AR scene
 function initAR() {
@@ -31,6 +30,9 @@ function initAR() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.xr.enabled = true;  // Enable WebXR
   document.body.appendChild(renderer.domElement);
+
+  // Ensure mobile page isn't zoomed in
+  document.body.style.zoom = '1';
 
   // Clock for animation and movement
   clock = new THREE.Clock();
@@ -48,12 +50,6 @@ function initAR() {
 
   // Add AR Button
   document.body.appendChild(createARButton());
-
-  // Handle touch/mouse interaction for rotation and zoom
-  document.addEventListener('mousedown', onMouseDown, false);
-  document.addEventListener('mousemove', onMouseMove, false);
-  document.addEventListener('mouseup', onMouseUp, false);
-  document.addEventListener('wheel', onMouseWheel, false);
 
   // Handle touch events for mobile
   document.addEventListener('touchstart', onTouchStart, false);
@@ -77,8 +73,6 @@ function loadModel() {
       model = gltf.scene;
       model.position.set(0, -0.5, -1); // Adjust model position
       scene.add(model);
-
-      setupModelInteraction();
   }, undefined, function (error) {
       console.error('Error loading the model:', error);
   });
@@ -86,16 +80,9 @@ function loadModel() {
 
 // Render the scene
 function render() {
-  if (model) {
-    model.rotation.x = touchRotationX; 
-    model.rotation.y = touchRotationY;
-  }
-
-  // Update AR anchor position
   if (arAnchor) {
     model.position.set(arAnchor.position.x, arAnchor.position.y, arAnchor.position.z);
   }
-
   renderer.render(scene, camera);
 }
 
@@ -122,7 +109,9 @@ function createARButton() {
           .then((session) => {
               arSession = session;
               renderer.xr.setSession(session);
-              setupTapToPlace();
+
+              // Create an anchor for the model in the AR world
+              createARAnchor();
           })
           .catch(console.error);
   });
@@ -130,61 +119,36 @@ function createARButton() {
   return button;
 }
 
-// Setup tap-to-place functionality
-function setupTapToPlace() {
-  controller.addEventListener('select', (event) => {
-    const frame = event.frame;
-    const hitTestResults = frame.getHitTestResults(event.inputSource.targetRaySpace);
-
-    if (hitTestResults.length > 0) {
-      const hit = hitTestResults[0];
-      const pose = hit.getPose(renderer.xr.getReferenceSpace());
-      model.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
-    }
-  });
+// Set up an anchor for the AR model
+function createARAnchor() {
+  arAnchor = new THREE.Group();
+  scene.add(arAnchor);
+  arAnchor.add(model);
+  model.position.set(0, -0.5, -1);
 }
 
-// Mouse and Touch Interaction: Rotation and Zoom (for desktop)
-function onMouseDown(event) {
-  touchStartX = event.clientX;
-  touchStartY = event.clientY;
-}
-
-function onMouseMove(event) {
-  if (event.buttons === 1) { // Left click or touch dragging
-    touchRotationX += (event.clientY - touchStartY) * 0.01;
-    touchRotationY += (event.clientX - touchStartX) * 0.01;
-    touchStartX = event.clientX;
-    touchStartY = event.clientY;
-  }
-}
-
-function onMouseUp(event) {}
-
-function onMouseWheel(event) {
-  if (model) {
-    model.scale.multiplyScalar(1 + event.deltaY * -0.01);
-  }
-}
-
-// Mobile touch interaction
+// Mobile touch interaction for zoom
 function onTouchStart(event) {
-  if (event.touches.length === 1) {
-    touchStartX = event.touches[0].clientX;
-    touchStartY = event.touches[0].clientY;
+  if (event.touches.length === 2) {
+    touchZoomDistance = Math.hypot(
+      event.touches[0].clientX - event.touches[1].clientX,
+      event.touches[0].clientY - event.touches[1].clientY
+    );
   }
 }
 
 function onTouchMove(event) {
-  if (event.touches.length === 1) {
-    const touchEndX = event.touches[0].clientX;
-    const touchEndY = event.touches[0].clientY;
+  if (event.touches.length === 2 && model) {
+    const newDistance = Math.hypot(
+      event.touches[0].clientX - event.touches[1].clientX,
+      event.touches[0].clientY - event.touches[1].clientY
+    );
 
-    touchRotationX += (touchEndY - touchStartY) * 0.01;
-    touchRotationY += (touchEndX - touchStartX) * 0.01;
+    const scaleChange = (newDistance / touchZoomDistance) - 1;
+    const scaleFactor = 1 + scaleChange;
 
-    touchStartX = touchEndX;
-    touchStartY = touchEndY;
+    model.scale.multiplyScalar(scaleFactor);
+    touchZoomDistance = newDistance;
   }
 }
 
