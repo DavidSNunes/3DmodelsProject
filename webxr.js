@@ -16,12 +16,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // Set up the WebXR scene and AR session
-let scene, camera, renderer, controller, model, clock;
-let isModelInteracted = false;
-let touchStartX = 0;
-let touchStartY = 0;
-let touchRotationX = 0;
-let touchRotationY = 0;
+let scene, camera, renderer, controller;
 
 // Initialize the AR scene
 function initAR() {
@@ -32,13 +27,9 @@ function initAR() {
 
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.xr.enabled = true;  // Enable WebXR
+  renderer.xr.enabled = true;
   document.body.appendChild(renderer.domElement);
 
-  // Clock for animation and movement
-  clock = new THREE.Clock();
-
-  // AR Controller
   controller = renderer.xr.getController(0);
   scene.add(controller);
 
@@ -51,12 +42,6 @@ function initAR() {
 
   // Add AR Button
   document.body.appendChild(createARButton());
-
-  // Handle touch/mouse interaction for rotation and zoom
-  document.addEventListener('mousedown', onMouseDown, false);
-  document.addEventListener('mousemove', onMouseMove, false);
-  document.addEventListener('mouseup', onMouseUp, false);
-  document.addEventListener('wheel', onMouseWheel, false);
 
   renderer.setAnimationLoop(render);
 }
@@ -73,12 +58,14 @@ function loadModel() {
   const loader = new THREE.GLTFLoader();
 
   loader.load(fullModelURL, (gltf) => {
-      model = gltf.scene;
-      model.position.set(0, -0.5, -1); // Adjust model position
+      const model = gltf.scene;
+      model.position.set(0, -0.5, -1);
       scene.add(model);
 
-      // Set up the model for interaction
-      setupModelInteraction();
+      // Enable model interaction for touch devices
+      if (isMobile()) {
+        addTouchControls(model);
+      }
 
   }, undefined, function (error) {
       console.error('Error loading the model:', error);
@@ -87,12 +74,6 @@ function loadModel() {
 
 // Render the scene
 function render() {
-  // Update model rotation manually or automatically (based on user interaction)
-  if (model) {
-    model.rotation.x = touchRotationX; // Set x-axis rotation
-    model.rotation.y = touchRotationY; // Set y-axis rotation
-  }
-
   renderer.render(scene, camera);
 }
 
@@ -125,34 +106,39 @@ function createARButton() {
   return button;
 }
 
-// Mouse and Touch Interaction: Rotation and Zoom
-function onMouseDown(event) {
-  touchStartX = event.clientX;
-  touchStartY = event.clientY;
+// Detect if the device is mobile
+function isMobile() {
+  return /Mobi|Android/i.test(navigator.userAgent);
 }
 
-function onMouseMove(event) {
-  if (event.buttons === 1) { // Left click or touch dragging
-    touchRotationX += (event.clientY - touchStartY) * 0.01;
-    touchRotationY += (event.clientX - touchStartX) * 0.01;
-    touchStartX = event.clientX;
-    touchStartY = event.clientY;
-  }
-}
+// Add touch controls to the model for mobile interaction
+function addTouchControls(model) {
+  let isTouching = false;
+  let lastTouchX = 0;
+  let lastTouchY = 0;
 
-function onMouseUp(event) {
-  // Do nothing, but you can use this for other interactions if necessary
-}
+  renderer.domElement.addEventListener('touchstart', (event) => {
+    isTouching = true;
+    lastTouchX = event.touches[0].clientX;
+    lastTouchY = event.touches[0].clientY;
+  });
 
-function onMouseWheel(event) {
-  // Zoom in and out
-  if (model) {
-    model.scale.set(
-      model.scale.x + event.deltaY * 0.01,
-      model.scale.y + event.deltaY * 0.01,
-      model.scale.z + event.deltaY * 0.01
-    );
-  }
+  renderer.domElement.addEventListener('touchmove', (event) => {
+    if (isTouching) {
+      const deltaX = event.touches[0].clientX - lastTouchX;
+      const deltaY = event.touches[0].clientY - lastTouchY;
+
+      model.rotation.y += deltaX * 0.01; // Rotate the model based on horizontal touch movement
+      model.rotation.x += deltaY * 0.01; // Rotate the model based on vertical touch movement
+
+      lastTouchX = event.touches[0].clientX;
+      lastTouchY = event.touches[0].clientY;
+    }
+  });
+
+  renderer.domElement.addEventListener('touchend', () => {
+    isTouching = false;
+  });
 }
 
 // Handle window resizing
