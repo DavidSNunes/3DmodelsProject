@@ -20,6 +20,7 @@ let touchStartX = 0;
 let touchStartY = 0;
 let touchRotationX = 0;
 let touchRotationY = 0;
+let isTouching = false; // Track if the user is currently touching the screen
 
 // Initialize the AR scene
 function initAR() {
@@ -153,7 +154,7 @@ function setupTapToPlace() {
 // Enable rotation in AR mode
 function setupARRotation() {
   const onTouchMoveAR = (event) => {
-    if (event.touches.length === 1) {
+    if (event.touches.length === 1 && isTouching) {
       const touchEndX = event.touches[0].clientX;
       const touchEndY = event.touches[0].clientY;
 
@@ -167,14 +168,20 @@ function setupARRotation() {
 
   const onTouchStartAR = (event) => {
     if (event.touches.length === 1) {
+      isTouching = true;
       touchStartX = event.touches[0].clientX;
       touchStartY = event.touches[0].clientY;
     }
   };
 
+  const onTouchEndAR = (event) => {
+    isTouching = false;
+  };
+
   // Add touch event listeners for AR rotation
   document.addEventListener('touchstart', onTouchStartAR, false);
   document.addEventListener('touchmove', onTouchMoveAR, false);
+  document.addEventListener('touchend', onTouchEndAR, false);
 }
 
 // Mouse and Touch Interaction: Rotation and Zoom (for desktop)
