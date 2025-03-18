@@ -78,7 +78,7 @@ function loadModel() {
       model.position.set(0, -0.5, -1); // Adjust model position
 
       // Scale the model to a consistent size
-      const scaleFactor = 0.05; // Adjust this value to control the size of the model
+      const scaleFactor = 0.1; // Adjust this value to control the size of the model
       model.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
       scene.add(model);
@@ -128,6 +128,7 @@ function createARButton() {
               arSession = session;
               renderer.xr.setSession(session);
               setupTapToPlace();
+              setupARRotation(); // Enable rotation in AR mode
           })
           .catch(console.error);
   });
@@ -147,6 +148,33 @@ function setupTapToPlace() {
       model.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
     }
   });
+}
+
+// Enable rotation in AR mode
+function setupARRotation() {
+  const onTouchMoveAR = (event) => {
+    if (event.touches.length === 1) {
+      const touchEndX = event.touches[0].clientX;
+      const touchEndY = event.touches[0].clientY;
+
+      touchRotationX += (touchEndY - touchStartY) * 0.01;
+      touchRotationY += (touchEndX - touchStartX) * 0.01;
+
+      touchStartX = touchEndX;
+      touchStartY = touchEndY;
+    }
+  };
+
+  const onTouchStartAR = (event) => {
+    if (event.touches.length === 1) {
+      touchStartX = event.touches[0].clientX;
+      touchStartY = event.touches[0].clientY;
+    }
+  };
+
+  // Add touch event listeners for AR rotation
+  document.addEventListener('touchstart', onTouchStartAR, false);
+  document.addEventListener('touchmove', onTouchMoveAR, false);
 }
 
 // Mouse and Touch Interaction: Rotation and Zoom (for desktop)
