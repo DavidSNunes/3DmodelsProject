@@ -21,7 +21,6 @@ let touchStartY = 0;
 let touchRotationX = 0;
 let touchRotationY = 0;
 let isTouching = false; // Track if the user is currently touching the screen
-let isModelPlaced = false; // Track if the model has been placed in the environment
 
 // Initialize the AR scene
 function initAR() {
@@ -77,12 +76,15 @@ function loadModel() {
 
   loader.load(fullModelURL, (gltf) => {
     model = gltf.scene;
+    model.position.set(0, -0.5, -1); // Adjust model position
 
     // Scale the model to a consistent size
     const scaleFactor = 0.05; // Adjust this value to control the size of the model
     model.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
     scene.add(model);
+
+    setupModelInteraction();
   }, undefined, function (error) {
     console.error('Error loading the model:', error);
   });
@@ -126,7 +128,7 @@ function createARButton() {
       .then((session) => {
         arSession = session;
         renderer.xr.setSession(session);
-        setupTapToPlace(); // Enable tap-to-place functionality
+        setupTapToPlace();
         setupARRotation(); // Enable rotation in AR mode
       })
       .catch(console.error);
@@ -137,22 +139,14 @@ function createARButton() {
 
 // Setup tap-to-place functionality
 function setupTapToPlace() {
-  const referenceSpace = renderer.xr.getReferenceSpace();
-  const hitTestSource = arSession.requestHitTestSource({ space: referenceSpace });
-
   controller.addEventListener('select', (event) => {
-    if (!isModelPlaced) {
-      const frame = event.frame;
-      const hitTestResults = frame.getHitTestResults(hitTestSource);
+    const frame = event.frame;
+    const hitTestResults = frame.getHitTestResults(event.inputSource.targetRaySpace);
 
-      if (hitTestResults.length > 0) {
-        const hit = hitTestResults[0];
-        const pose = hit.getPose(referenceSpace);
-
-        // Place the model at the hit position
-        model.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
-        isModelPlaced = true; // Mark the model as placed
-      }
+    if (hitTestResults.length > 0) {
+      const hit = hitTestResults[0];
+      const pose = hit.getPose(renderer.xr.getReferenceSpace());
+      model.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
     }
   });
 }
