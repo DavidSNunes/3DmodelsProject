@@ -77,7 +77,6 @@ function loadModel() {
 
   loader.load(fullModelURL, (gltf) => {
     model = gltf.scene;
-    model.visible = false; // Hide the model until it's placed in the environment
 
     // Scale the model to a consistent size
     const scaleFactor = 0.05; // Adjust this value to control the size of the model
@@ -152,7 +151,6 @@ function setupTapToPlace() {
 
         // Place the model at the hit position
         model.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
-        model.visible = true; // Make the model visible
         isModelPlaced = true; // Mark the model as placed
       }
     }
