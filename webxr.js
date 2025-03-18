@@ -15,6 +15,12 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 let scene, camera, renderer, controller, model, clock, arSession, arAnchor;
+let isModelInteracted = false;
+let touchStartX = 0;
+let touchStartY = 0;
+let touchRotationX = 0;
+let touchRotationY = 0;
+let isTouching = false; // Track if the user is currently touching the screen
 let isModelPlaced = false; // Track if the model has been placed in the environment
 
 // Initialize the AR scene
@@ -45,6 +51,17 @@ function initAR() {
   // Add AR Button
   document.body.appendChild(createARButton());
 
+  // Handle touch/mouse interaction for rotation and zoom
+  document.addEventListener('mousedown', onMouseDown, false);
+  document.addEventListener('mousemove', onMouseMove, false);
+  document.addEventListener('mouseup', onMouseUp, false);
+  document.addEventListener('wheel', onMouseWheel, false);
+
+  // Handle touch events for mobile
+  document.addEventListener('touchstart', onTouchStart, false);
+  document.addEventListener('touchmove', onTouchMove, false);
+  document.addEventListener('touchend', onTouchEnd, false);
+
   renderer.setAnimationLoop(render);
 }
 
@@ -74,6 +91,12 @@ function loadModel() {
 
 // Render the scene
 function render() {
+  if (model) {
+    model.rotation.x = touchRotationX;
+    model.rotation.y = touchRotationY;
+  }
+
+  // Update AR anchor position
   if (arAnchor) {
     model.position.set(arAnchor.position.x, arAnchor.position.y, arAnchor.position.z);
   }
@@ -104,7 +127,8 @@ function createARButton() {
       .then((session) => {
         arSession = session;
         renderer.xr.setSession(session);
-        setupHitTesting(); // Enable hit testing for surface detection
+        setupTapToPlace(); // Enable tap-to-place functionality
+        setupARRotation(); // Enable rotation in AR mode
       })
       .catch(console.error);
   });
@@ -112,8 +136,8 @@ function createARButton() {
   return button;
 }
 
-// Enable hit testing for surface detection
-function setupHitTesting() {
+// Setup tap-to-place functionality
+function setupTapToPlace() {
   const referenceSpace = renderer.xr.getReferenceSpace();
   const hitTestSource = arSession.requestHitTestSource({ space: referenceSpace });
 
@@ -134,3 +158,91 @@ function setupHitTesting() {
     }
   });
 }
+
+// Enable rotation in AR mode
+function setupARRotation() {
+  const onTouchMoveAR = (event) => {
+    if (event.touches.length === 1 && isTouching) {
+      const touchEndX = event.touches[0].clientX;
+      const touchEndY = event.touches[0].clientY;
+
+      // Calculate rotation based on touch movement
+      touchRotationX += (touchEndY - touchStartY) * 0.01;
+      touchRotationY += (touchEndX - touchStartX) * 0.01;
+
+      // Update touch start positions for the next move event
+      touchStartX = touchEndX;
+      touchStartY = touchEndY;
+    }
+  };
+
+  const onTouchStartAR = (event) => {
+    if (event.touches.length === 1) {
+      isTouching = true;
+      touchStartX = event.touches[0].clientX;
+      touchStartY = event.touches[0].clientY;
+    }
+  };
+
+  const onTouchEndAR = (event) => {
+    isTouching = false;
+  };
+
+  // Add touch event listeners for AR rotation
+  document.addEventListener('touchstart', onTouchStartAR, false);
+  document.addEventListener('touchmove', onTouchMoveAR, false);
+  document.addEventListener('touchend', onTouchEndAR, false);
+}
+
+// Mouse and Touch Interaction: Rotation and Zoom (for desktop)
+function onMouseDown(event) {
+  touchStartX = event.clientX;
+  touchStartY = event.clientY;
+}
+
+function onMouseMove(event) {
+  if (event.buttons === 1) { // Left click or touch dragging
+    touchRotationX += (event.clientY - touchStartY) * 0.01;
+    touchRotationY += (event.clientX - touchStartX) * 0.01;
+    touchStartX = event.clientX;
+    touchStartY = event.clientY;
+  }
+}
+
+function onMouseUp(event) {}
+
+function onMouseWheel(event) {
+  if (model) {
+    model.scale.multiplyScalar(1 + event.deltaY * -0.01);
+  }
+}
+
+// Mobile touch interaction
+function onTouchStart(event) {
+  if (event.touches.length === 1) {
+    touchStartX = event.touches[0].clientX;
+    touchStartY = event.touches[0].clientY;
+  }
+}
+
+function onTouchMove(event) {
+  if (event.touches.length === 1) {
+    const touchEndX = event.touches[0].clientX;
+    const touchEndY = event.touches[0].clientY;
+
+    touchRotationX += (touchEndY - touchStartY) * 0.01;
+    touchRotationY += (touchEndX - touchStartX) * 0.01;
+
+    touchStartX = touchEndX;
+    touchStartY = touchEndY;
+  }
+}
+
+function onTouchEnd(event) {}
+
+// Handle window resizing
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
