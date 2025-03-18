@@ -44,15 +44,15 @@ function initAR() {
   loadModel();
 
   // Add a light source
-  const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+  const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 2);
   scene.add(light);
 
   // Add additional lighting
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
   directionalLight.position.set(1, 1, 1).normalize();
   scene.add(directionalLight);
 
-  const ambientLight = new THREE.AmbientLight(0x404040); // Soft white light
+  const ambientLight = new THREE.AmbientLight(0x808080); // Soft white light
   scene.add(ambientLight);
 
   // Add AR Button
