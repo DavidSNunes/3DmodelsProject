@@ -78,7 +78,7 @@ function loadModel() {
       model.position.set(0, -0.5, -1); // Adjust model position
 
       // Scale the model to a consistent size
-      const scaleFactor = 0.1; // Adjust this value to control the size of the model
+      const scaleFactor = 0.05; // Adjust this value to control the size of the model
       model.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
       scene.add(model);
