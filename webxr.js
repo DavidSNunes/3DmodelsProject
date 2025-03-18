@@ -43,9 +43,17 @@ function initAR() {
   // Load the model
   loadModel();
 
-  // Add a light source
-  const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-  scene.add(light);
+  // Add lights
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Soft overall light
+  scene.add(ambientLight);
+
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // Simulates sunlight
+  directionalLight.position.set(1, 1, 1).normalize();
+  scene.add(directionalLight);
+
+  const pointLight = new THREE.PointLight(0xffffff, 1, 10); // Additional light source
+  pointLight.position.set(2, 2, 2);
+  scene.add(pointLight);
 
   // Add AR Button
   document.body.appendChild(createARButton());
