@@ -3,88 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Model Viewer</title>
+    <title>WebXR Model Viewer</title>
     <style>
-        /* Reset básico e estilo de fundo */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            background: #121212;
-            color: #fff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* Área do modelo */
-        #model-container {
-            width: 100%;
-            height: 70%;
-            position: relative;
-        }
-
-        /* UI container melhor posicionado */
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
         .ui-container {
             position: absolute;
-            bottom: 10px;
-            width: 100%;
-            padding: 10px;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.7);
-            border-top: 1px solid #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
             text-align: center;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.8);
         }
-
-        .ui-container h2 {
-            font-size: 24px;
-            margin-bottom: 5px;
-            color: #4CAF50;
-        }
-
-        .ui-container p {
-            font-size: 16px;
-            margin-bottom: 10px;
-            color: #ddd;
-        }
-
         .ui-container a {
             color: #4CAF50;
             text-decoration: none;
-            font-weight: bold;
-            transition: color 0.3s;
-        }
-
-        .ui-container a:hover {
-            color: #fff;
         }
     </style>
-
-    <!-- Load Three.js e extras -->
+    <!-- Load Three.js -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/build/three.min.js"></script>
+    <!-- Load GLTFLoader -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/loaders/GLTFLoader.js"></script>
+    <!-- Load OrbitControls -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/controls/OrbitControls.js"></script>
 </head>
-
 <body>
-    <!-- Container para o modelo -->
-    <div id="model-container"></div>
-
-    <!-- UI com nome, descrição e link -->
     <div class="ui-container">
-        <h2 id="product-name">Carregando modelo...</h2>
-        <p id="product-desc">Por favor, aguarde enquanto o modelo carrega.</p>
-        <a id="product-link" href="#" target="_blank">Ver Produto</a>
+        <h2 id="product-name">Loading...</h2>
+        <p id="product-desc">Please wait while we load your model.</p>
+        <a id="product-link" href="#" target="_blank">View Product</a>
     </div>
-
-    <!-- Load do script principal -->
+    <!-- Load webxr.js as an ES6 module -->
     <script type="module" src="/webxr.js"></script>
 </body>
 </html>
