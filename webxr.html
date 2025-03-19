@@ -5,7 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebXR Model Viewer</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        body { 
+            margin: 0; 
+            font-family: Arial, sans-serif; 
+            overflow: hidden; 
+        }
+        #ar-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
         .ui-container {
             position: absolute;
             bottom: 20px;
@@ -36,6 +45,16 @@
             cursor: pointer;
             z-index: 1000;
         }
+        .error-message {
+            color: red;
+            font-size: 18px;
+            font-weight: bold;
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
     </style>
     <!-- Load Three.js -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/build/three.min.js"></script>
@@ -43,15 +62,21 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
-    <!-- UI Container -->
-    <div class="ui-container">
-        <h2 id="product-name">Loading...</h2>
-        <p id="product-desc">Please wait while we load your model.</p>
-        <a id="product-link" href="#" target="_blank">View Product</a>
-    </div>
+    <!-- AR Container -->
+    <div id="ar-container">
+        <!-- UI Container -->
+        <div class="ui-container">
+            <h2 id="product-name">Loading...</h2>
+            <p id="product-desc">Please wait while we load your model.</p>
+            <a id="product-link" href="#" target="_blank">View Product</a>
+        </div>
 
-    <!-- AR Button -->
-    <button id="ar-button">Start AR</button>
+        <!-- AR Button -->
+        <button id="ar-button">Start AR</button>
+
+        <!-- Error Message -->
+        <p id="errorMessage" class="error-message" style="display: none;">Model not found.</p>
+    </div>
 
     <!-- Load webxr.js -->
     <script type="module" src="/webxr.js"></script>
