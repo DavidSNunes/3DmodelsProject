@@ -7,6 +7,7 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('product-name').innerText = window.modelData.name || 'Loading...';
     document.getElementById('product-desc').innerText = window.modelData.desc || 'Please wait while we load your model.';
     document.getElementById('product-link').href = window.modelData.link || '#';
+    document.getElementById('product-link').innerText = 'View Product'; // Ensure the link text is set
 
     initAR(); // Initialize AR after ensuring model data is ready
   } else {
@@ -32,6 +33,12 @@ function initAR() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.xr.enabled = true; // Enable WebXR
   document.body.appendChild(renderer.domElement);
+
+  // Ensure the canvas is above the UI container
+  renderer.domElement.style.position = 'absolute';
+  renderer.domElement.style.top = '0';
+  renderer.domElement.style.left = '0';
+  renderer.domElement.style.zIndex = '0'; // Lower than the UI container
 
   // Clock for animation and movement
   clock = new THREE.Clock();
@@ -118,7 +125,7 @@ function createARButton() {
   const button = document.createElement('button');
   button.innerText = 'Start AR';
   button.style.position = 'absolute';
-  button.style.bottom = '20px';
+  button.style.bottom = '80px';
   button.style.left = '50%';
   button.style.transform = 'translateX(-50%)';
   button.style.padding = '12px 24px';
@@ -128,7 +135,7 @@ function createARButton() {
   button.style.border = 'none';
   button.style.borderRadius = '5px';
   button.style.cursor = 'pointer';
-  button.style.zIndex = '1000';
+  button.style.zIndex = '1'; // Lower than the model
 
   // Set up AR session when clicked
   button.addEventListener('click', () => {
