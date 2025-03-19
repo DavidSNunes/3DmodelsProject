@@ -1,6 +1,16 @@
 // Ensure model data is available and proceed with loading
 window.addEventListener('DOMContentLoaded', () => {
-  if (window.modelData) {
+  const urlParams = new URLSearchParams(window.location.search);
+  const modelFile = urlParams.get('file');
+
+  if (modelFile) {
+    window.modelData = {
+      file: modelFile,
+      name: 'Model Name', // Replace with dynamic data if needed
+      desc: 'Model Description', // Replace with dynamic data if needed
+      link: '#' // Replace with dynamic data if needed
+    };
+
     console.log('Model data passed to WebXR:', window.modelData);
 
     // Update UI elements with model info
@@ -10,7 +20,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
     initAR(); // Initialize AR after ensuring model data is ready
   } else {
-    console.log('No model data found');
+    console.log('No model file found');
+    document.getElementById('errorMessage').style.display = 'block';
   }
 });
 
@@ -32,7 +43,7 @@ function initAR() {
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.xr.enabled = true; // Enable WebXR
-  document.body.appendChild(renderer.domElement);
+  document.getElementById('ar-container').appendChild(renderer.domElement);
 
   // Add lighting
   const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 2);
@@ -78,6 +89,7 @@ function loadModel() {
     setupModelInteraction();
   }, undefined, (error) => {
     console.error('Error loading the model:', error);
+    document.getElementById('errorMessage').style.display = 'block';
   });
 }
 

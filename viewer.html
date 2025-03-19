@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AR Model Viewer</title>
-    <script type="module" src="https://unpkg.com/@google/model-viewer"></script>
     <style>
         body { 
             text-align: center; 
@@ -17,10 +16,10 @@
             height: 100vh; 
             background-color: #f5f5f5;
         }
-        h2, p {
-            margin: 10px 0;
+        h2 {
+            margin-bottom: 20px;
         }
-        model-viewer {
+        #ar-container {
             width: 80vw;
             max-width: 1000px;
             height: 60vh;
@@ -28,78 +27,70 @@
             background-color: #fff;
             border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
         }
         .error-message {
             color: red;
             font-size: 18px;
             font-weight: bold;
         }
-        .product-info {
-            margin-top: 15px;
-        }
-        .product-link {
-            display: inline-block;
-            margin-top: 10px;
-            padding: 10px 15px;
-            background-color: #007bff;
+        .ui-container {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
             color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 1000;
+        }
+        .ui-container a {
+            color: #4CAF50;
             text-decoration: none;
+        }
+        #ar-button {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
             border-radius: 5px;
-            font-weight: bold;
+            cursor: pointer;
+            z-index: 1000;
         }
     </style>
+    <!-- Load Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146/build/three.min.js"></script>
+    <!-- Load GLTFLoader -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
-    <h2 id="productName">View Model in AR</h2>
+    <h2>View Model in AR</h2>
 
-    <model-viewer id="modelViewer"
-        ar
-        ar-modes="webxr scene-viewer quick-look"
-        camera-controls
-        auto-rotate>
-    </model-viewer>
+    <!-- AR Container -->
+    <div id="ar-container">
+        <!-- UI Container -->
+        <div class="ui-container">
+            <h2 id="product-name">Loading...</h2>
+            <p id="product-desc">Please wait while we load your model.</p>
+            <a id="product-link" href="#" target="_blank">View Product</a>
+        </div>
 
-    <p id="errorMessage" class="error-message" style="display: none;">Model not found.</p>
-
-    <div class="product-info">
-        <p id="productDesc"></p>
-        <a id="productLink" class="product-link" href="#" target="_blank">View Product</a>
+        <!-- AR Button -->
+        <button id="ar-button">Start AR</button>
     </div>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const modelFile = urlParams.get("file");
-            const productName = urlParams.get("name");
-            const productDesc = urlParams.get("desc");
-            const productLink = urlParams.get("link");
+    <!-- Error Message -->
+    <p id="errorMessage" class="error-message" style="display: none;">Model not found.</p>
 
-            document.getElementById("productName").textContent = productName || "Unknown Model";
-            document.getElementById("productDesc").textContent = productDesc || "No description available.";
-            document.getElementById("productLink").href = productLink || "#";
-
-            if (modelFile) {
-                const modelViewer = document.getElementById("modelViewer");
-                const modelUrl = `https://3dmodelsproject.pages.dev/models/${modelFile}`;
-                
-                // Preload the model to check if it exists
-                fetch(modelUrl, { method: "HEAD" })
-                    .then(response => {
-                        if (response.ok) {
-                            modelViewer.setAttribute("src", modelUrl);
-                        } else {
-                            showError();
-                        }
-                    })
-                    .catch(() => showError());
-            } else {
-                showError();
-            }
-
-            function showError() {
-                document.getElementById("errorMessage").style.display = "block";
-            }
-        });
-    </script>
+    <!-- Load webxr.js -->
+    <script type="module" src="/webxr.js"></script>
 </body>
 </html>
