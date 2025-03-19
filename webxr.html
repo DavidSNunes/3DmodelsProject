@@ -16,26 +16,44 @@
             padding: 10px 20px;
             border-radius: 10px;
             text-align: center;
+            z-index: 1000;
         }
         .ui-container a {
             color: #4CAF50;
             text-decoration: none;
+        }
+        #ar-button {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
         }
     </style>
     <!-- Load Three.js -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/build/three.min.js"></script>
     <!-- Load GLTFLoader -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/loaders/GLTFLoader.js"></script>
-    <!-- Load OrbitControls -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
+    <!-- UI Container -->
     <div class="ui-container">
         <h2 id="product-name">Loading...</h2>
         <p id="product-desc">Please wait while we load your model.</p>
         <a id="product-link" href="#" target="_blank">View Product</a>
     </div>
-    <!-- Load webxr.js as an ES6 module -->
+
+    <!-- AR Button -->
+    <button id="ar-button">Start AR</button>
+
+    <!-- Load webxr.js -->
     <script type="module" src="/webxr.js"></script>
 </body>
 </html>

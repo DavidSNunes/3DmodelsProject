@@ -14,40 +14,30 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-let scene, camera, renderer, controller, model, clock, arSession, arAnchor;
-let isModelInteracted = false;
-let touchStartX = 0;
-let touchStartY = 0;
-let touchRotationX = 0;
-let touchRotationY = 0;
-let isTouching = false; // Track if the user is currently touching the screen
+let scene, camera, renderer, controller, model, arSession;
+let isTouching = false;
+let touchStartX = 0, touchStartY = 0;
+let touchRotationX = 0, touchRotationY = 0;
 
 // Initialize the AR scene
 function initAR() {
+  // Set up the scene
   scene = new THREE.Scene();
+
+  // Set up the camera
   camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
   scene.add(camera);
 
+  // Set up the renderer
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.xr.enabled = true; // Enable WebXR
   document.body.appendChild(renderer.domElement);
 
-  // Clock for animation and movement
-  clock = new THREE.Clock();
-
-  // AR Controller
-  controller = renderer.xr.getController(0);
-  scene.add(controller);
-
-  // Load the model
-  loadModel();
-
-  // Add a light source
+  // Add lighting
   const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 2);
   scene.add(light);
 
-  // Add additional lighting
   const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
   directionalLight.position.set(1, 1, 1).normalize();
   scene.add(directionalLight);
@@ -55,20 +45,17 @@ function initAR() {
   const ambientLight = new THREE.AmbientLight(0x808080); // Soft white light
   scene.add(ambientLight);
 
-  // Add AR Button
-  document.body.appendChild(createARButton());
+  // Load the model
+  loadModel();
 
-  // Handle touch/mouse interaction for rotation and zoom
-  document.addEventListener('mousedown', onMouseDown, false);
-  document.addEventListener('mousemove', onMouseMove, false);
-  document.addEventListener('mouseup', onMouseUp, false);
-  document.addEventListener('wheel', onMouseWheel, false);
+  // Set up AR button
+  const arButton = document.getElementById('ar-button');
+  arButton.addEventListener('click', startARSession);
 
-  // Handle touch events for mobile
-  document.addEventListener('touchstart', onTouchStart, false);
-  document.addEventListener('touchmove', onTouchMove, false);
-  document.addEventListener('touchend', onTouchEnd, false);
+  // Handle window resizing
+  window.addEventListener('resize', onWindowResize);
 
+  // Start the render loop
   renderer.setAnimationLoop(render);
 }
 
@@ -81,72 +68,34 @@ function loadModel() {
   const fullModelURL = cloudflareBaseURL + modelUrl;
 
   const loader = new THREE.GLTFLoader();
-
   loader.load(fullModelURL, (gltf) => {
     model = gltf.scene;
     model.position.set(0, -0.5, -1); // Adjust model position
-
-    // Scale the model to a consistent size
-    const scaleFactor = 0.05; // Adjust this value to control the size of the model
-    model.scale.set(scaleFactor, scaleFactor, scaleFactor);
-
+    model.scale.set(0.05, 0.05, 0.05); // Scale the model
     scene.add(model);
 
+    // Enable interaction
     setupModelInteraction();
-  }, undefined, function (error) {
+  }, undefined, (error) => {
     console.error('Error loading the model:', error);
   });
 }
 
-// Render the scene
-function render() {
-  if (model) {
-    model.rotation.x = touchRotationX;
-    model.rotation.y = touchRotationY;
-  }
-
-  // Update AR anchor position
-  if (arAnchor) {
-    model.position.set(arAnchor.position.x, arAnchor.position.y, arAnchor.position.z);
-  }
-
-  renderer.render(scene, camera);
+// Start AR session
+function startARSession() {
+  navigator.xr.requestSession('immersive-ar', { requiredFeatures: ['local-floor', 'hit-test'] })
+    .then((session) => {
+      arSession = session;
+      renderer.xr.setSession(session);
+      setupTapToPlace();
+      setupARRotation();
+    })
+    .catch(console.error);
 }
 
-// Create an AR button
-function createARButton() {
-  const button = document.createElement('button');
-  button.innerText = 'Start AR';
-  button.style.position = 'absolute';
-  button.style.bottom = '20px';
-  button.style.left = '50%';
-  button.style.transform = 'translateX(-50%)';
-  button.style.padding = '12px 24px';
-  button.style.fontSize = '16px';
-  button.style.backgroundColor = '#4CAF50';
-  button.style.color = '#fff';
-  button.style.border = 'none';
-  button.style.borderRadius = '5px';
-  button.style.cursor = 'pointer';
-  button.style.zIndex = '1000';
-
-  // Set up AR session when clicked
-  button.addEventListener('click', () => {
-    navigator.xr.requestSession('immersive-ar', { requiredFeatures: ['local-floor', 'hit-test'] })
-      .then((session) => {
-        arSession = session;
-        renderer.xr.setSession(session);
-        setupTapToPlace();
-        setupARRotation(); // Enable rotation in AR mode
-      })
-      .catch(console.error);
-  });
-
-  return button;
-}
-
-// Setup tap-to-place functionality
+// Set up tap-to-place functionality
 function setupTapToPlace() {
+  controller = renderer.xr.getController(0);
   controller.addEventListener('select', (event) => {
     const frame = event.frame;
     const hitTestResults = frame.getHitTestResults(event.inputSource.targetRaySpace);
@@ -157,76 +106,27 @@ function setupTapToPlace() {
       model.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
     }
   });
+  scene.add(controller);
 }
 
-// Enable rotation in AR mode
+// Set up AR rotation
 function setupARRotation() {
-  const onTouchMoveAR = (event) => {
-    if (event.touches.length === 1 && isTouching) {
-      const touchEndX = event.touches[0].clientX;
-      const touchEndY = event.touches[0].clientY;
-
-      // Calculate rotation based on touch movement
-      touchRotationX += (touchEndY - touchStartY) * 0.01;
-      touchRotationY += (touchEndX - touchStartX) * 0.01;
-
-      // Update touch start positions for the next move event
-      touchStartX = touchEndX;
-      touchStartY = touchEndY;
-    }
-  };
-
-  const onTouchStartAR = (event) => {
-    if (event.touches.length === 1) {
-      isTouching = true;
-      touchStartX = event.touches[0].clientX;
-      touchStartY = event.touches[0].clientY;
-    }
-  };
-
-  const onTouchEndAR = (event) => {
-    isTouching = false;
-  };
-
-  // Add touch event listeners for AR rotation
   document.addEventListener('touchstart', onTouchStartAR, false);
   document.addEventListener('touchmove', onTouchMoveAR, false);
   document.addEventListener('touchend', onTouchEndAR, false);
 }
 
-// Mouse and Touch Interaction: Rotation and Zoom (for desktop)
-function onMouseDown(event) {
-  touchStartX = event.clientX;
-  touchStartY = event.clientY;
-}
-
-function onMouseMove(event) {
-  if (event.buttons === 1) { // Left click or touch dragging
-    touchRotationX += (event.clientY - touchStartY) * 0.01;
-    touchRotationY += (event.clientX - touchStartX) * 0.01;
-    touchStartX = event.clientX;
-    touchStartY = event.clientY;
-  }
-}
-
-function onMouseUp(event) {}
-
-function onMouseWheel(event) {
-  if (model) {
-    model.scale.multiplyScalar(1 + event.deltaY * -0.01);
-  }
-}
-
-// Mobile touch interaction
-function onTouchStart(event) {
+// Touch event handlers for AR rotation
+function onTouchStartAR(event) {
   if (event.touches.length === 1) {
+    isTouching = true;
     touchStartX = event.touches[0].clientX;
     touchStartY = event.touches[0].clientY;
   }
 }
 
-function onTouchMove(event) {
-  if (event.touches.length === 1) {
+function onTouchMoveAR(event) {
+  if (event.touches.length === 1 && isTouching) {
     const touchEndX = event.touches[0].clientX;
     const touchEndY = event.touches[0].clientY;
 
@@ -238,11 +138,22 @@ function onTouchMove(event) {
   }
 }
 
-function onTouchEnd(event) {}
+function onTouchEndAR(event) {
+  isTouching = false;
+}
+
+// Render the scene
+function render() {
+  if (model) {
+    model.rotation.x = touchRotationX;
+    model.rotation.y = touchRotationY;
+  }
+  renderer.render(scene, camera);
+}
 
 // Handle window resizing
-window.addEventListener('resize', () => {
+function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-});
+}
