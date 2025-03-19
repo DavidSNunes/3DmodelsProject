@@ -5,50 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebXR Model Viewer</title>
     <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background-color: #f5f5f5;
-            padding: 20px;
-        }
-        .container {
-            width: 100%;
-            max-width: 800px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        #product-name {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        #model-container {
-            width: 100%;
-            height: 400px;
-            background-color: #fff;
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        .ui-container {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
             border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            margin-bottom: 20px;
-            position: relative;
-            overflow: hidden;
+            text-align: center;
+            z-index: 1; /* Lower z-index to avoid overlapping the model */
         }
-        #product-desc {
-            font-size: 16px;
-            color: #555;
-            margin-bottom: 10px;
-        }
-        #product-link {
-            font-size: 16px;
+        .ui-container a {
             color: #4CAF50;
             text-decoration: none;
             font-weight: bold;
-            margin-bottom: 20px;
-            display: inline-block;
         }
         #ar-button {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
             padding: 12px 24px;
             font-size: 16px;
             background-color: #4CAF50;
@@ -56,12 +35,13 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            z-index: 1; /* Lower z-index to avoid overlapping the model */
         }
-        .error-message {
-            color: red;
-            font-size: 18px;
-            font-weight: bold;
-            margin-top: 20px;
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0; /* Ensure the canvas (model) is below the UI */
         }
     </style>
     <!-- Load Three.js -->
@@ -70,25 +50,14 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
-    <div class="container">
-        <!-- Product Name -->
-        <h1 id="product-name">Loading...</h1>
-
-        <!-- Model Container -->
-        <div id="model-container"></div>
-
-        <!-- Product Description -->
+    <div class="ui-container">
+        <h2 id="product-name">Loading...</h2>
         <p id="product-desc">Please wait while we load your model.</p>
-
-        <!-- Product Link -->
         <a id="product-link" href="#" target="_blank">View Product</a>
-
-        <!-- AR Button -->
-        <button id="ar-button">Start AR</button>
     </div>
 
-    <!-- Error Message -->
-    <p id="errorMessage" class="error-message" style="display: none;">Model not found.</p>
+    <!-- AR Button -->
+    <button id="ar-button">Start AR</button>
 
     <!-- Load webxr.js -->
     <script type="module" src="/webxr.js"></script>
