@@ -20,15 +20,16 @@
         }
         .ui-container {
             position: absolute;
-            bottom: 80px; /* Adjusted to make space for the AR button */
-            left: 20px;
+            bottom: 20px; /* Positioned at the bottom */
+            left: 10px;
             background: rgba(0, 0, 0, 0.7);
             color: white;
             padding: 10px 20px;
             border-radius: 10px;
             text-align: left;
             z-index: 10;
-            max-width: 300px;
+            max-width: 90%; /* Allow container to take more width */
+            font-size: 14px; /* Smaller font size for mobile */
         }
         .ui-container a {
             color: #4CAF50;
@@ -36,18 +37,32 @@
             display: block;
             margin-top: 10px;
         }
-        #ar-button {
-            position: absolute;
-            bottom: 20px; /* Positioned at the bottom-left */
-            left: 20px; /* Aligned with the model details container */
-            padding: 12px 24px;
+        .ui-container button {
+            display: block;
+            width: 100%; /* Full width */
+            padding: 10px 20px;
             font-size: 16px;
             background-color: #4CAF50;
             color: #fff;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            z-index: 1000;
+            margin-top: 10px; /* Space between link and button */
+        }
+
+        /* Responsive Styles for Mobile Devices */
+        @media only screen and (max-width: 768px) {
+            .ui-container {
+                bottom: 10px; /* Move closer to the bottom */
+                left: 10px;
+                max-width: 90%;
+                font-size: 14px;
+                padding: 8px 16px;
+            }
+            .ui-container button {
+                font-size: 14px;
+                padding: 8px 16px;
+            }
         }
     </style>
     <!-- Load Three.js -->
@@ -63,8 +78,8 @@
             <h2 id="product-name">Loading...</h2>
             <p id="product-desc">Please wait while we load your model.</p>
             <a id="product-link" href="#" target="_blank">View Product</a>
+            <button id="ar-button">Start AR</button>
         </div>
-        <button id="ar-button">Start AR</button>
     </div>
     <!-- Load webxr.js as an ES6 module -->
     <script type="module" src="/webxr.js"></script>
