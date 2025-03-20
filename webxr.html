@@ -20,15 +20,16 @@
         }
         .ui-container {
             position: absolute;
-            bottom: 80px; /* Adjusted to make space for the AR button */
-            left: 20px;
+            bottom: 100px; /* Adjusted to make space for the AR button */
+            left: 10px;
             background: rgba(0, 0, 0, 0.7);
             color: white;
             padding: 10px 20px;
             border-radius: 10px;
             text-align: left;
             z-index: 10;
-            max-width: 300px;
+            max-width: 90%; /* Allow container to take more width */
+            font-size: 14px; /* Smaller font size for mobile */
         }
         .ui-container a {
             color: #4CAF50;
@@ -39,7 +40,7 @@
         #ar-button {
             position: absolute;
             bottom: 20px; /* Positioned at the bottom-left */
-            left: 20px; /* Aligned with the model details container */
+            left: 10px; /* Aligned with the model details container */
             padding: 12px 24px;
             font-size: 16px;
             background-color: #4CAF50;
@@ -48,22 +49,25 @@
             border-radius: 5px;
             cursor: pointer;
             z-index: 1000;
+            width: calc(100% - 20px); /* Make button full width with some margin */
+            box-sizing: border-box; /* Ensure padding is included in width */
         }
 
         /* Responsive Styles for Mobile Devices */
         @media only screen and (max-width: 768px) {
             .ui-container {
-                bottom: 100px; /* Move higher to make space for AR button */
-                left: 10px; /* Adjust left position */
-                max-width: 90%; /* Allow container to take more width */
-                font-size: 14px; /* Smaller font size for mobile */
-                padding: 8px 16px; /* Smaller padding */
+                bottom: 120px; /* Move higher to make space for AR button */
+                left: 10px;
+                max-width: 90%;
+                font-size: 14px;
+                padding: 8px 16px;
             }
             #ar-button {
                 bottom: 10px; /* Move closer to the bottom */
-                left: 10px; /* Align with the container */
-                padding: 10px 20px; /* Smaller padding */
-                font-size: 14px; /* Smaller font size */
+                left: 10px;
+                padding: 10px 20px;
+                font-size: 14px;
+                width: calc(100% - 20px); /* Full width with margin */
             }
         }
     </style>
