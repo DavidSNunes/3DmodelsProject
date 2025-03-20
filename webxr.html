@@ -17,6 +17,7 @@
             flex: 1;
             position: relative;
             overflow: hidden;
+            height: 60vh; /* Reduce height of the model viewer */
         }
         .ui-container {
             position: absolute;
@@ -25,7 +26,7 @@
             right: 0; /* Span the full width */
             background: rgba(0, 0, 0, 0.7);
             color: white;
-            padding: 10px 20px;
+            padding: 8px 16px; /* Reduced padding */
             border-radius: 10px 10px 0 0; /* Rounded corners at the top */
             text-align: left;
             z-index: 10;
@@ -34,51 +35,54 @@
             box-sizing: border-box; /* Include padding in width/height */
         }
         .ui-container h2 {
-            margin: 0 0 10px 0; /* Reduce margin for compact layout */
-            font-size: 18px;
+            margin: 0 0 8px 0; /* Reduced margin */
+            font-size: 16px; /* Smaller font size */
         }
         .ui-container p {
-            margin: 0 0 10px 0; /* Reduce margin for compact layout */
-            font-size: 14px;
+            margin: 0 0 8px 0; /* Reduced margin */
+            font-size: 12px; /* Smaller font size */
         }
         .ui-container a {
             color: #4CAF50;
             text-decoration: none;
             display: block;
-            margin-bottom: 10px; /* Space between link and button */
-            font-size: 14px;
+            margin-bottom: 8px; /* Reduced margin */
+            font-size: 12px; /* Smaller font size */
         }
         .ui-container button {
             display: block;
             width: 100%; /* Full width */
-            padding: 10px 20px;
-            font-size: 16px;
+            padding: 8px 16px; /* Reduced padding */
+            font-size: 14px; /* Smaller font size */
             background-color: #4CAF50;
             color: #fff;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            margin-top: 10px; /* Space between link and button */
+            margin-top: 8px; /* Reduced margin */
         }
 
         /* Responsive Styles for Mobile Devices */
         @media only screen and (max-width: 768px) {
+            #model-container {
+                height: 50vh; /* Further reduce height for mobile */
+            }
             .ui-container {
-                padding: 8px 16px; /* Smaller padding for mobile */
+                padding: 6px 12px; /* Even smaller padding for mobile */
                 max-height: 50vh; /* Allow more height for mobile */
             }
             .ui-container h2 {
-                font-size: 16px; /* Smaller font size for mobile */
+                font-size: 14px; /* Smaller font size for mobile */
             }
             .ui-container p {
-                font-size: 12px; /* Smaller font size for mobile */
+                font-size: 10px; /* Smaller font size for mobile */
             }
             .ui-container a {
-                font-size: 12px; /* Smaller font size for mobile */
+                font-size: 10px; /* Smaller font size for mobile */
             }
             .ui-container button {
-                font-size: 14px; /* Smaller font size for mobile */
-                padding: 8px 16px; /* Smaller padding for mobile */
+                font-size: 12px; /* Smaller font size for mobile */
+                padding: 6px 12px; /* Smaller padding for mobile */
             }
         }
     </style>
