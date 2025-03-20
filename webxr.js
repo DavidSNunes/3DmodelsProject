@@ -195,7 +195,6 @@ function onMouseWheel(event) {
   }
 }
 
-// Mobile touch interaction
 function onTouchStart(event) {
   if (event.touches.length === 1) {
     touchStartX = event.touches[0].clientX;
@@ -205,22 +204,13 @@ function onTouchStart(event) {
 
 function onTouchMove(event) {
   if (event.touches.length === 1) {
-    const touchEndX = event.touches[0].clientX;
-    const touchEndY = event.touches[0].clientY;
-
-    touchRotationX += (touchEndY - touchStartY) * 0.01;
-    touchRotationY += (touchEndX - touchStartX) * 0.01;
-
-    touchStartX = touchEndX;
-    touchStartY = touchEndY;
+    const deltaX = event.touches[0].clientX - touchStartX;
+    const deltaY = event.touches[0].clientY - touchStartY;
+    touchRotationX += deltaY * 0.01;
+    touchRotationY += deltaX * 0.01;
+    touchStartX = event.touches[0].clientX;
+    touchStartY = event.touches[0].clientY;
   }
 }
 
 function onTouchEnd(event) {}
-
-// Handle window resizing
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});

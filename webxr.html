@@ -30,6 +30,7 @@
             z-index: 10;
             max-width: 90%; /* Allow container to take more width */
             font-size: 14px; /* Smaller font size for mobile */
+            overflow: auto; /* Prevents content from being cut off */
         }
         .ui-container a {
             color: #4CAF50;
@@ -58,6 +59,8 @@
                 max-width: 90%;
                 font-size: 14px;
                 padding: 8px 16px;
+                overflow-y: auto; /* Allow scrolling in container if text is too long */
+                height: 35vh; /* Limit the container height */
             }
             .ui-container button {
                 font-size: 14px;
