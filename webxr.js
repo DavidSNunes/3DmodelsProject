@@ -27,6 +27,7 @@ let isTouching = false; // Track if the user is currently touching the screen
 function initAR() {
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.set(0, 0, 2); // Adjust camera position to center the model
   scene.add(camera);
 
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -94,11 +95,8 @@ function loadModel() {
 
   loader.load(fullModelURL, (gltf) => {
     model = gltf.scene;
-    model.position.set(0, -0.5, -1); // Adjust model position
-
-    // Scale the model to a smaller size
-    const scaleFactor = 0.03; // Reduced scale factor for smaller model
-    model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+    model.position.set(0, -1, -2); // Adjust model position (lower on the Y-axis)
+    model.scale.set(0.03, 0.03, 0.03); // Smaller scale for the model
 
     scene.add(model);
 
