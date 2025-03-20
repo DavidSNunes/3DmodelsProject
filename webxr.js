@@ -7,6 +7,7 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('product-name').innerText = window.modelData.name || 'Loading...';
     document.getElementById('product-desc').innerText = window.modelData.desc || 'Please wait while we load your model.';
     document.getElementById('product-link').href = window.modelData.link || '#';
+    document.getElementById('product-link').innerText = 'View Product'; // Ensure the link text is set
 
     initAR(); // Initialize AR after ensuring model data is ready
   } else {
