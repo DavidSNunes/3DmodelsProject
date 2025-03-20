@@ -49,6 +49,23 @@
             cursor: pointer;
             z-index: 1000;
         }
+
+        /* Responsive Styles for Mobile Devices */
+        @media only screen and (max-width: 768px) {
+            .ui-container {
+                bottom: 100px; /* Move higher to make space for AR button */
+                left: 10px; /* Adjust left position */
+                max-width: 90%; /* Allow container to take more width */
+                font-size: 14px; /* Smaller font size for mobile */
+                padding: 8px 16px; /* Smaller padding */
+            }
+            #ar-button {
+                bottom: 10px; /* Move closer to the bottom */
+                left: 10px; /* Align with the container */
+                padding: 10px 20px; /* Smaller padding */
+                font-size: 14px; /* Smaller font size */
+            }
+        }
     </style>
     <!-- Load Three.js -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/build/three.min.js"></script>
