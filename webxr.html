@@ -17,7 +17,7 @@
             flex: 1;
             position: relative;
             overflow: hidden;
-            height: 50vh; /* Further reduce height of the model viewer */
+            height: 40vh; /* Reduced height for the model viewer */
         }
         .ui-container {
             position: absolute;
@@ -30,7 +30,7 @@
             border-radius: 10px 10px 0 0; /* Rounded corners at the top */
             text-align: left;
             z-index: 10;
-            max-height: 40vh; /* Limit height to avoid cutting off */
+            max-height: 50vh; /* Allow more height for mobile */
             overflow-y: auto; /* Allow scrolling if content overflows */
             box-sizing: border-box; /* Include padding in width/height */
         }
@@ -65,11 +65,11 @@
         /* Responsive Styles for Mobile Devices */
         @media only screen and (max-width: 768px) {
             #model-container {
-                height: 40vh; /* Even smaller height for mobile */
+                height: 30vh; /* Even smaller height for mobile */
             }
             .ui-container {
                 padding: 4px 8px; /* Minimal padding for mobile */
-                max-height: 50vh; /* Allow more height for mobile */
+                max-height: 60vh; /* Allow more height for mobile */
             }
             .ui-container h2 {
                 font-size: 12px; /* Smaller font size for mobile */

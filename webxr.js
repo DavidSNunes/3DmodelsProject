@@ -96,8 +96,8 @@ function loadModel() {
     model = gltf.scene;
     model.position.set(0, -0.5, -1); // Adjust model position
 
-    // Scale the model to a consistent size
-    const scaleFactor = 0.05; // Adjust this value to control the size of the model
+    // Scale the model to a smaller size
+    const scaleFactor = 0.03; // Reduced scale factor for smaller model
     model.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
     scene.add(model);
