@@ -7,7 +7,6 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('product-name').innerText = window.modelData.name || 'Loading...';
     document.getElementById('product-desc').innerText = window.modelData.desc || 'Please wait while we load your model.';
     document.getElementById('product-link').href = window.modelData.link || '#';
-    document.getElementById('product-link').innerText = 'View Product'; // Ensure the link text is set
 
     initAR(); // Initialize AR after ensuring model data is ready
   } else {
@@ -32,7 +31,7 @@ function initAR() {
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.xr.enabled = true; // Enable WebXR
-  document.getElementById('model-container').appendChild(renderer.domElement);
+  document.body.appendChild(renderer.domElement);
 
   // Clock for animation and movement
   clock = new THREE.Clock();
@@ -56,17 +55,8 @@ function initAR() {
   const ambientLight = new THREE.AmbientLight(0x808080); // Soft white light
   scene.add(ambientLight);
 
-  // Set up AR session when the AR button is clicked
-  document.getElementById('ar-button').addEventListener('click', () => {
-    navigator.xr.requestSession('immersive-ar', { requiredFeatures: ['local-floor', 'hit-test'] })
-      .then((session) => {
-        arSession = session;
-        renderer.xr.setSession(session);
-        setupTapToPlace();
-        setupARRotation(); // Enable rotation in AR mode
-      })
-      .catch(console.error);
-  });
+  // Add AR Button
+  document.body.appendChild(createARButton());
 
   // Handle touch/mouse interaction for rotation and zoom
   document.addEventListener('mousedown', onMouseDown, false);
@@ -96,8 +86,8 @@ function loadModel() {
     model = gltf.scene;
     model.position.set(0, -0.5, -1); // Adjust model position
 
-    // Scale the model to a smaller size
-    const scaleFactor = 0.03; // Reduced scale factor for smaller model
+    // Scale the model to a consistent size
+    const scaleFactor = 0.05; // Adjust this value to control the size of the model
     model.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
     scene.add(model);
@@ -121,6 +111,38 @@ function render() {
   }
 
   renderer.render(scene, camera);
+}
+
+// Create an AR button
+function createARButton() {
+  const button = document.createElement('button');
+  button.innerText = 'Start AR';
+  button.style.position = 'absolute';
+  button.style.bottom = '20px';
+  button.style.left = '50%';
+  button.style.transform = 'translateX(-50%)';
+  button.style.padding = '12px 24px';
+  button.style.fontSize = '16px';
+  button.style.backgroundColor = '#4CAF50';
+  button.style.color = '#fff';
+  button.style.border = 'none';
+  button.style.borderRadius = '5px';
+  button.style.cursor = 'pointer';
+  button.style.zIndex = '1000';
+
+  // Set up AR session when clicked
+  button.addEventListener('click', () => {
+    navigator.xr.requestSession('immersive-ar', { requiredFeatures: ['local-floor', 'hit-test'] })
+      .then((session) => {
+        arSession = session;
+        renderer.xr.setSession(session);
+        setupTapToPlace();
+        setupARRotation(); // Enable rotation in AR mode
+      })
+      .catch(console.error);
+  });
+
+  return button;
 }
 
 // Setup tap-to-place functionality
