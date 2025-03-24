@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebXR AR Model Viewer</title>
+    <title>WebXR Model Viewer</title>
     <style>
         body {
             margin: 0;
@@ -17,7 +17,6 @@
         #model-container {
             flex: 1;
             position: relative;
-            overflow: hidden;
         }
 
         .ui-container {
@@ -28,41 +27,28 @@
             color: white;
             padding: 10px 20px;
             border-radius: 10px;
-            text-align: left;
             z-index: 10;
             max-width: 90%;
-            font-size: 14px;
-            overflow: auto;
         }
 
-        .ui-container a {
-            color: #4CAF50;
-            text-decoration: none;
+        .ui-container a, .ui-container button {
             display: block;
             margin-top: 10px;
-        }
-
-        .ui-container button {
-            display: block;
-            width: 100%;
-            padding: 10px 20px;
-            font-size: 16px;
+            padding: 10px;
             background-color: #4CAF50;
             color: #fff;
             border: none;
             border-radius: 5px;
+            text-align: center;
             cursor: pointer;
-            margin-top: 10px;
+            text-decoration: none;
         }
 
         @media only screen and (max-width: 768px) {
             .ui-container {
                 bottom: 10px;
-                max-width: 90%;
                 font-size: 14px;
                 padding: 8px 16px;
-                overflow-y: auto;
-                height: 35vh;
             }
 
             .ui-container button {
@@ -72,19 +58,30 @@
         }
     </style>
 
-    <!-- Load Three.js -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.146/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
+    <!-- Load ModelViewer -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer/dist/model-viewer.min.js"></script>
 </head>
 
 <body>
     <div id="model-container">
+        <!-- 3D Model Viewer -->
+        <model-viewer 
+            id="viewer"
+            alt="3D Model"
+            src=""
+            ar
+            camera-controls
+            shadow-intensity="1"
+            auto-rotate
+            style="width: 100%; height: 100%;">
+        </model-viewer>
+
+        <!-- UI Container -->
         <div class="ui-container">
             <h2 id="product-name">Loading...</h2>
             <p id="product-desc">Please wait while we load your model.</p>
             <a id="product-link" href="#" target="_blank">View Product</a>
-            <button id="ar-button">Start AR</button>
+            <button id="ar-button">View in AR</button>
         </div>
     </div>
 
