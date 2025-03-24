@@ -20,7 +20,7 @@
         }
         .ui-container {
             position: absolute;
-            bottom: 20px; /* Positioned at the bottom */
+            bottom: 20px;
             left: 10px;
             background: rgba(0, 0, 0, 0.7);
             color: white;
@@ -28,9 +28,9 @@
             border-radius: 10px;
             text-align: left;
             z-index: 10;
-            max-width: 90%; /* Allow container to take more width */
-            font-size: 14px; /* Smaller font size for mobile */
-            overflow: auto; /* Prevents content from being cut off */
+            max-width: 90%;
+            font-size: 14px;
+            overflow: auto;
         }
         .ui-container a {
             color: #4CAF50;
@@ -40,7 +40,7 @@
         }
         .ui-container button {
             display: block;
-            width: 100%; /* Full width */
+            width: 100%;
             padding: 10px 20px;
             font-size: 16px;
             background-color: #4CAF50;
@@ -48,19 +48,13 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            margin-top: 10px; /* Space between link and button */
+            margin-top: 10px;
         }
 
-        /* Responsive Styles for Mobile Devices */
         @media only screen and (max-width: 768px) {
             .ui-container {
-                bottom: 10px; /* Move closer to the bottom */
-                left: 10px;
-                max-width: 90%;
+                bottom: 10px;
                 font-size: 14px;
-                padding: 8px 16px;
-                overflow-y: auto; /* Allow scrolling in container if text is too long */
-                height: 35vh; /* Limit the container height */
             }
             .ui-container button {
                 font-size: 14px;
@@ -68,11 +62,8 @@
             }
         }
     </style>
-    <!-- Load Three.js -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/build/three.min.js"></script>
-    <!-- Load GLTFLoader -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/loaders/GLTFLoader.js"></script>
-    <!-- Load OrbitControls -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
@@ -84,7 +75,6 @@
             <button id="ar-button">Start AR</button>
         </div>
     </div>
-    <!-- Load webxr.js as an ES6 module -->
     <script type="module" src="/webxr.js"></script>
 </body>
 </html>

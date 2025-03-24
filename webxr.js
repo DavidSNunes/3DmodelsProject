@@ -1,4 +1,3 @@
-// Ensure model data is available and proceed with loading
 window.addEventListener('DOMContentLoaded', () => {
   if (window.modelData) {
     console.log('Model data passed to WebXR:', window.modelData);
@@ -58,26 +57,14 @@ function initAR() {
 
   // Set up AR session when the AR button is clicked
   document.getElementById('ar-button').addEventListener('click', () => {
-    // ARCore or ARKit detection based on the platform
-    const arFeatures = ['local-floor', 'hit-test']; // Common features
-    const isAndroid = /Android/i.test(navigator.userAgent);
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-    // If running on Android or iOS, use their specific AR sessions (ARCore or ARKit)
-    if (isAndroid) {
-      navigator.xr.requestSession('immersive-ar', { requiredFeatures: arFeatures, optionalFeatures: ['dom-overlay'] })
-        .then(startARSession)
-        .catch(console.error);
-    } else if (isIOS) {
-      navigator.xr.requestSession('immersive-ar', { requiredFeatures: arFeatures, optionalFeatures: ['dom-overlay'] })
-        .then(startARSession)
-        .catch(console.error);
-    } else {
-      // Fallback for non-Android/iOS devices
-      navigator.xr.requestSession('immersive-ar', { requiredFeatures: arFeatures })
-        .then(startARSession)
-        .catch(console.error);
-    }
+    navigator.xr.requestSession('immersive-ar', { requiredFeatures: ['local-floor', 'hit-test'] })
+      .then((session) => {
+        arSession = session;
+        renderer.xr.setSession(session);
+        setupTapToPlace();
+        setupARRotation(); // Enable rotation in AR mode
+      })
+      .catch(console.error);
   });
 
   // Handle touch/mouse interaction for rotation and zoom
@@ -92,14 +79,6 @@ function initAR() {
   document.addEventListener('touchend', onTouchEnd, false);
 
   renderer.setAnimationLoop(render);
-}
-
-// Start AR Session
-function startARSession(session) {
-  arSession = session;
-  renderer.xr.setSession(session);
-  setupTapToPlace();
-  setupARRotation(); // Enable rotation in AR mode
 }
 
 // Load the 3D model
