@@ -72,6 +72,7 @@
             alt="3D Model"
             src=""
             ar
+            ar-modes="webxr scene-viewer quick-look"
             camera-controls
             shadow-intensity="1"
             auto-rotate
@@ -83,7 +84,7 @@
             <h2 id="product-name">Loading...</h2>
             <p id="product-desc">Please wait while we load your model.</p>
             <a id="product-link" href="#" target="_blank">View Product</a>
-            <button id="ar-button" style="display:none;">View in AR</button>
+            <button id="ar-button">View in AR</button>
         </div>
     </div>
 
@@ -94,7 +95,8 @@
             name: "Audi A4",
             desc: "3D Model of an Audi A4",
             link: "https://www.audi.com/",
-            file: "audi_a4.glb"
+            file: "audi_a4.glb",
+            usdzFile: "audi_a4.usdz" // For iOS ARKit Quick Look
         };
 
         // Populate UI with model data
@@ -109,13 +111,28 @@
         // AR Button setup
         const arButton = document.getElementById('ar-button');
 
-        // Check if WebXR AR is supported
+        // Handle AR button click
+        arButton.addEventListener('click', () => {
+            // Check platform and trigger appropriate AR mode
+            if (modelViewer.canActivateAR) {
+                modelViewer.activateAR();
+            } else {
+                alert("AR mode is not supported on this device.");
+            }
+        });
+
+        // Set iOS Quick Look link if supported
+        const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isiOS && modelData.usdzFile) {
+            modelViewer.setAttribute('ios-src', `https://3dmodelsproject.pages.dev/models/${modelData.usdzFile}`);
+        }
+
+        // AR Button visibility setup based on WebXR support
         navigator.xr?.isSessionSupported('immersive-ar').then((supported) => {
-            if (supported) {
+            if (supported || isiOS) {
                 arButton.style.display = 'block';
-                arButton.addEventListener('click', () => {
-                    modelViewer.activateAR();
-                });
+            } else {
+                arButton.style.display = 'none';
             }
         });
     </script>
