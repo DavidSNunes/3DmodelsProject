@@ -9,11 +9,10 @@
     <style>
         body {
             margin: 0;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
             display: flex;
             flex-direction: column;
             height: 100vh;
+            font-family: Arial, sans-serif;
         }
 
         #model-container {
@@ -84,7 +83,7 @@
             <h2 id="product-name">Loading...</h2>
             <p id="product-desc">Please wait while we load your model.</p>
             <a id="product-link" href="#" target="_blank">View Product</a>
-            <button id="ar-button">View in AR</button>
+            <button id="ar-button" style="display: none;">View in AR</button>
         </div>
     </div>
 
@@ -113,7 +112,9 @@
 
         // Handle AR button click
         arButton.addEventListener('click', () => {
-            // Check platform and trigger appropriate AR mode
+            console.log("AR button clicked!");
+
+            // Force AR to activate
             if (modelViewer.canActivateAR) {
                 modelViewer.activateAR();
             } else {
@@ -127,12 +128,30 @@
             modelViewer.setAttribute('ios-src', `https://3dmodelsproject.pages.dev/models/${modelData.usdzFile}`);
         }
 
-        // AR Button visibility setup based on WebXR support
+        // Show AR button if device supports AR
+        modelViewer.addEventListener('ar-status', (event) => {
+            console.log("AR Status:", event.detail.status);
+
+            if (event.detail.status === 'session-started') {
+                console.log("AR Session started successfully.");
+            }
+        });
+
+        // Ensure AR button shows up
+        modelViewer.addEventListener('load', () => {
+            console.log("Model loaded, checking AR support...");
+
+            if (modelViewer.canActivateAR) {
+                arButton.style.display = 'block';
+            } else {
+                console.log("AR not supported on this device.");
+            }
+        });
+
+        // Fallback check for WebXR or Quick Look (if needed)
         navigator.xr?.isSessionSupported('immersive-ar').then((supported) => {
             if (supported || isiOS) {
                 arButton.style.display = 'block';
-            } else {
-                arButton.style.display = 'none';
             }
         });
     </script>
