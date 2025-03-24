@@ -2,107 +2,117 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebXR Model Viewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WebXR AR Experience</title>
+
+    <!-- CSS (inlined) -->
     <style>
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            font-family: Arial, sans-serif; 
+        /* Ensure page fits the screen on mobile */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+
+        /* Center content */
+        .container {
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            text-align: center;
         }
-        #model-container {
-            flex: 1;
-            position: relative;
-            overflow: hidden;
-        }
-        .ui-container {
-            position: absolute;
+
+        /* AR button styling */
+        .ar-button-container {
+            position: fixed;
             bottom: 20px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.7);
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+
+        .ar-button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #0078D4;
             color: white;
-            padding: 10px 20px;
-            border-radius: 10px;
-            text-align: left;
-            z-index: 10;
-            max-width: 90%;
-            font-size: 14px;
-        }
-        .ui-container a {
-            color: #4CAF50;
-            text-decoration: none;
-            display: block;
-            margin-top: 10px;
-        }
-        .ui-container button {
-            display: block;
-            width: 100%;
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #4CAF50;
-            color: #fff;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            margin-top: 10px;
+            transition: background-color 0.3s ease;
         }
-        #ar-prompt {
-            position: absolute;
-            top: 20px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            color: white;
-            background: rgba(0,0,0,0.7);
-            padding: 10px;
-            z-index: 100;
-            display: none;
+
+        /* Button hover effect */
+        .ar-button:hover {
+            background-color: #005A8D;
         }
-        #ar-error {
-            position: absolute;
-            top: 20px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            color: red;
-            background: rgba(0,0,0,0.7);
-            padding: 10px;
-            z-index: 100;
-            display: none;
-        }
-        @media only screen and (max-width: 768px) {
-            .ui-container {
-                bottom: 10px;
-                left: 10px;
-                max-width: 90%;
-                font-size: 14px;
-                padding: 8px 16px;
+
+        /* Mobile responsiveness */
+        @media (max-width: 600px) {
+            .ar-button {
+                padding: 12px 25px;
+                font-size: 16px;
             }
-            .ui-container button {
-                font-size: 14px;
-                padding: 8px 16px;
+
+            .container h1 {
+                font-size: 22px;
+            }
+
+            .container p {
+                font-size: 16px;
+            }
+
+            .ar-button-container {
+                bottom: 15px;
             }
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.146/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/webxr-polyfill@latest/build/webxr-polyfill.js"></script>
 </head>
+
 <body>
-    <div id="ar-prompt">Move your device to start AR experience</div>
-    <div id="ar-error"></div>
-    <div id="model-container">
-        <div class="ui-container">
-            <h2 id="product-name">Loading...</h2>
-            <p id="product-desc">Please wait while we load your model.</p>
-            <a id="product-link" href="#" target="_blank">View Product</a>
-            <button id="ar-button">Start AR</button>
-        </div>
+    <!-- Main Content -->
+    <div class="container">
+        <h1>3D Model Viewer</h1>
+        <p>Scan the QR code or click the button to view this model in AR.</p>
     </div>
-    <script src="/webxr.js"></script>
+
+    <!-- AR Button -->
+    <div class="ar-button-container">
+        <button class="ar-button" id="ar-button">Start AR</button>
+    </div>
+
+    <!-- JavaScript (inlined) -->
+    <script>
+        document.getElementById('ar-button').addEventListener('click', async () => {
+            console.log('AR button clicked. Attempting to launch AR...');
+
+            if ('xr' in navigator) {
+                try {
+                    const session = await navigator.xr.requestSession('immersive-ar', {
+                        requiredFeatures: ['hit-test']
+                    });
+
+                    console.log('WebXR session started:', session);
+
+                    alert('AR session started!');  // Temporary feedback for now
+
+                    session.addEventListener('end', () => {
+                        console.log('AR session ended.');
+                    });
+                } catch (err) {
+                    console.error('Failed to start AR session:', err);
+                    alert('Failed to start AR: ' + err.message);
+                }
+            } else {
+                console.log('WebXR not supported on this device.');
+                alert('Your browser does not support WebXR!');
+            }
+        });
+    </script>
 </body>
 </html>
