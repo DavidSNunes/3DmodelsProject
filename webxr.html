@@ -1,53 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR with WebXR</title>
-  <script src="https://cdn.jsdelivr.net/npm/aframe@1.2.0/dist/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/webxr-polyfill@1.0.0/dist/webxr-polyfill.min.js"></script>
-  <script src="webxr.js"></script> <!-- Link to the JavaScript file -->
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-    }
-    #arButton {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 100;
-      padding: 10px;
-      background-color: rgba(0, 0, 0, 0.5);
-      color: white;
-      border: none;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    .ar-ui {
-      position: absolute;
-      top: 20%;
-      left: 10%;
-      z-index: 99;
-      color: white;
-      font-size: 18px;
-      font-weight: bold;
-      text-align: center;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebXR Model Viewer</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: Arial, sans-serif; 
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #model-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        .ui-container {
+            position: absolute;
+            bottom: 20px; /* Positioned at the bottom */
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-align: left;
+            z-index: 10;
+            max-width: 90%; /* Allow container to take more width */
+            font-size: 14px; /* Smaller font size for mobile */
+            overflow: auto; /* Prevents content from being cut off */
+        }
+        .ui-container a {
+            color: #4CAF50;
+            text-decoration: none;
+            display: block;
+            margin-top: 10px;
+        }
+        .ui-container button {
+            display: block;
+            width: 100%; /* Full width */
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px; /* Space between link and button */
+        }
+
+        /* Responsive Styles for Mobile Devices */
+        @media only screen and (max-width: 768px) {
+            .ui-container {
+                bottom: 10px; /* Move closer to the bottom */
+                left: 10px;
+                max-width: 90%;
+                font-size: 14px;
+                padding: 8px 16px;
+                overflow-y: auto; /* Allow scrolling in container if text is too long */
+                height: 35vh; /* Limit the container height */
+            }
+            .ui-container button {
+                font-size: 14px;
+                padding: 8px 16px;
+            }
+        }
+    </style>
+    <!-- Load Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146/build/three.min.js"></script>
+    <!-- Load GLTFLoader -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/loaders/GLTFLoader.js"></script>
+    <!-- Load OrbitControls -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
-  <button id="arButton">Enter AR</button>
-
-  <div class="ar-ui">
-    <h2>Product Name</h2>
-    <p>This is a description of the product.</p>
-    <a href="https://example.com" target="_blank">Learn More</a>
-  </div>
-
-  <a-scene id="arScene" embedded arjs="sourceType: webcam; debugUIEnabled: false;">
-    <a-entity id="model" position="0 0 0" scale="0.5 0.5 0.5"></a-entity>
-    <a-entity camera></a-entity>
-  </a-scene>
+    <div id="model-container">
+        <div class="ui-container">
+            <h2 id="product-name">Loading...</h2>
+            <p id="product-desc">Please wait while we load your model.</p>
+            <a id="product-link" href="#" target="_blank">View Product</a>
+            <button id="ar-button">Start AR</button>
+        </div>
+    </div>
+    <!-- Load webxr.js as an ES6 module -->
+    <script type="module" src="/webxr.js"></script>
 </body>
 </html>
