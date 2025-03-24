@@ -30,7 +30,6 @@
             z-index: 10;
             max-width: 90%;
             font-size: 14px;
-            overflow: auto;
         }
         .ui-container a {
             color: #4CAF50;
@@ -50,11 +49,38 @@
             cursor: pointer;
             margin-top: 10px;
         }
-
+        /* AR-specific styles */
+        #ar-prompt {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            z-index: 100;
+            display: none;
+        }
+        #ar-error {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: red;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            z-index: 100;
+            display: none;
+        }
         @media only screen and (max-width: 768px) {
             .ui-container {
                 bottom: 10px;
+                left: 10px;
+                max-width: 90%;
                 font-size: 14px;
+                padding: 8px 16px;
             }
             .ui-container button {
                 font-size: 14px;
@@ -62,11 +88,18 @@
             }
         }
     </style>
+    <!-- Load Three.js -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/build/three.min.js"></script>
+    <!-- Load GLTFLoader -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/controls/OrbitControls.js"></script>
+    <!-- Load WebXR polyfill for ARCore/ARKit support -->
+    <script src="https://cdn.jsdelivr.net/npm/webxr-polyfill@latest/build/webxr-polyfill.js"></script>
+    <!-- Load WebXR Manager -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/webxr/WebXRManager.js"></script>
 </head>
 <body>
+    <div id="ar-prompt">Move your device to start AR experience</div>
+    <div id="ar-error"></div>
     <div id="model-container">
         <div class="ui-container">
             <h2 id="product-name">Loading...</h2>
