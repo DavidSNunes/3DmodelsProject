@@ -1,48 +1,53 @@
-// Ensure data is loaded
-window.addEventListener('DOMContentLoaded', () => {
-  if (window.modelData) {
-      console.log('Model data loaded:', window.modelData);
+// Global references
+const arButton = document.getElementById('arButton');
+const arUI = document.querySelector('.ar-ui');
+const modelEntity = document.getElementById('model');
 
-      // Set product data
-      document.getElementById('product-name').innerText = window.modelData.name || 'Loading...';
-      document.getElementById('product-desc').innerText = window.modelData.desc || 'Please wait while we load your model.';
-      document.getElementById('product-link').href = window.modelData.link || '#';
-      document.getElementById('product-link').innerText = 'View Product';
+// AR Button click event to trigger the AR experience
+arButton.addEventListener('click', async () => {
+  // Hide UI elements when entering AR
+  arUI.style.display = 'none';
 
-      // Load 3D model into viewer
-      const modelViewer = document.getElementById('viewer');
-      modelViewer.src = `https://3dmodelsproject.pages.dev/models/${window.modelData.file}`;
+  // Check if the browser supports WebXR
+  if (navigator.xr) {
+    try {
+      // Request XR session for immersive AR
+      const session = await navigator.xr.requestSession('immersive-ar', {
+        requiredFeatures: ['hit-test'],
+        optionalFeatures: ['dom-overlay']
+      });
 
-      // AR Button setup
-      setupARButton();
+      // Initialize AR session and add event listener for session end
+      session.addEventListener('end', () => {
+        arUI.style.display = 'block'; // Show UI again when AR session ends
+      });
+
+      // Set up AR environment (for ARCore / ARKit)
+      const xrViewer = new XRViewer(session);
+      xrViewer.start();
+
+    } catch (error) {
+      console.error('WebXR session failed: ', error);
+      alert('Failed to start AR session. Make sure your device supports AR.');
+    }
   } else {
-      console.error('No model data found');
+    alert('WebXR is not supported on your device.');
   }
 });
 
-// Setup AR button
-function setupARButton() {
-  const arButton = document.getElementById('ar-button');
+// Custom WebXR Viewer class for managing the AR session
+class XRViewer {
+  constructor(session) {
+    this.session = session;
+  }
 
-  // If WebXR is supported, enable the button
-  navigator.xr?.isSessionSupported('immersive-ar').then((supported) => {
-      if (supported) {
-          arButton.style.display = 'block';
-          arButton.addEventListener('click', () => startWebXRSession());
-      } else {
-          console.warn('AR not supported on this device.');
-          arButton.style.display = 'none';
-      }
-  });
-}
+  start() {
+    // Start the AR session and handle rendering of models, UI elements
+    console.log('AR session started');
 
-// Start WebXR AR Session
-function startWebXRSession() {
-  const modelViewer = document.getElementById('viewer');
+    // Load the 3D model (GLTF or GLB)
+    modelEntity.setAttribute('gltf-model', 'url(model.glb)');
 
-  if (modelViewer.canActivateAR) {
-      modelViewer.activateAR();
-  } else {
-      alert("WebXR AR is not supported on this device.");
+    // You can add more logic here to handle further AR features, like animations, interactions, etc.
   }
 }

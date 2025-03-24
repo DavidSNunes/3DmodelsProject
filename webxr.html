@@ -1,159 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Model Viewer with AR</title>
-
-    <!-- Styling -->
-    <style>
-        body {
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            font-family: Arial, sans-serif;
-        }
-
-        #model-container {
-            flex: 1;
-            position: relative;
-        }
-
-        .ui-container {
-            position: absolute;
-            bottom: 20px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 10px;
-            z-index: 10;
-            max-width: 90%;
-        }
-
-        .ui-container a, .ui-container button {
-            display: block;
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #4CAF50;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            text-align: center;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        @media only screen and (max-width: 768px) {
-            .ui-container {
-                bottom: 10px;
-                font-size: 14px;
-                padding: 8px 16px;
-            }
-
-            .ui-container button {
-                font-size: 14px;
-                padding: 8px 16px;
-            }
-        }
-    </style>
-
-    <!-- Load ModelViewer -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AR with WebXR</title>
+  <script src="https://cdn.jsdelivr.net/npm/aframe@1.2.0/dist/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/webxr-polyfill@1.0.0/dist/webxr-polyfill.min.js"></script>
+  <script src="webxr.js"></script> <!-- Link to the JavaScript file -->
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    #arButton {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 100;
+      padding: 10px;
+      background-color: rgba(0, 0, 0, 0.5);
+      color: white;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .ar-ui {
+      position: absolute;
+      top: 20%;
+      left: 10%;
+      z-index: 99;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+    }
+  </style>
 </head>
-
 <body>
-    <div id="model-container">
-        <!-- 3D Model Viewer -->
-        <model-viewer 
-            id="viewer"
-            alt="3D Model"
-            src=""
-            ar
-            ar-modes="webxr scene-viewer quick-look"
-            camera-controls
-            shadow-intensity="1"
-            auto-rotate
-            style="width: 100%; height: 100%;">
-        </model-viewer>
+  <button id="arButton">Enter AR</button>
 
-        <!-- UI Container -->
-        <div class="ui-container">
-            <h2 id="product-name">Loading...</h2>
-            <p id="product-desc">Please wait while we load your model.</p>
-            <a id="product-link" href="#" target="_blank">View Product</a>
-            <button id="ar-button" style="display: none;">View in AR</button>
-        </div>
-    </div>
+  <div class="ar-ui">
+    <h2>Product Name</h2>
+    <p>This is a description of the product.</p>
+    <a href="https://example.com" target="_blank">Learn More</a>
+  </div>
 
-    <!-- Load the script -->
-    <script>
-        // Sample model data (this would usually come from a backend or URL params)
-        const modelData = {
-            name: "Audi A4",
-            desc: "3D Model of an Audi A4",
-            link: "https://www.audi.com/",
-            file: "audi_a4.glb",
-            usdzFile: "audi_a4.usdz" // For iOS ARKit Quick Look
-        };
-
-        // Populate UI with model data
-        document.getElementById('product-name').innerText = modelData.name;
-        document.getElementById('product-desc').innerText = modelData.desc;
-        document.getElementById('product-link').href = modelData.link;
-
-        // Load the 3D model into viewer
-        const modelViewer = document.getElementById('viewer');
-        modelViewer.src = `https://3dmodelsproject.pages.dev/models/${modelData.file}`;
-
-        // AR Button setup
-        const arButton = document.getElementById('ar-button');
-
-        // Handle AR button click
-        arButton.addEventListener('click', () => {
-            console.log("AR button clicked!");
-
-            // Force AR to activate
-            if (modelViewer.canActivateAR) {
-                modelViewer.activateAR();
-            } else {
-                alert("AR mode is not supported on this device.");
-            }
-        });
-
-        // Set iOS Quick Look link if supported
-        const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        if (isiOS && modelData.usdzFile) {
-            modelViewer.setAttribute('ios-src', `https://3dmodelsproject.pages.dev/models/${modelData.usdzFile}`);
-        }
-
-        // Show AR button if device supports AR
-        modelViewer.addEventListener('ar-status', (event) => {
-            console.log("AR Status:", event.detail.status);
-
-            if (event.detail.status === 'session-started') {
-                console.log("AR Session started successfully.");
-            }
-        });
-
-        // Ensure AR button shows up
-        modelViewer.addEventListener('load', () => {
-            console.log("Model loaded, checking AR support...");
-
-            if (modelViewer.canActivateAR) {
-                arButton.style.display = 'block';
-            } else {
-                console.log("AR not supported on this device.");
-            }
-        });
-
-        // Fallback check for WebXR or Quick Look (if needed)
-        navigator.xr?.isSessionSupported('immersive-ar').then((supported) => {
-            if (supported || isiOS) {
-                arButton.style.display = 'block';
-            }
-        });
-    </script>
+  <a-scene id="arScene" embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+    <a-entity id="model" position="0 0 0" scale="0.5 0.5 0.5"></a-entity>
+    <a-entity camera></a-entity>
+  </a-scene>
 </body>
 </html>
