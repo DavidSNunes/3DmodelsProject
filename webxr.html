@@ -2,117 +2,89 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WebXR AR Experience</title>
-
-    <!-- CSS (inlined) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebXR Model Viewer</title>
     <style>
-        /* Ensure page fits the screen on mobile */
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-        }
-
-        /* Center content */
-        .container {
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: Arial, sans-serif; 
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-            text-align: center;
+            height: 100vh;
         }
-
-        /* AR button styling */
-        .ar-button-container {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
+        #model-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
         }
-
-        .ar-button {
-            padding: 15px 30px;
-            font-size: 18px;
-            background-color: #0078D4;
+        .ui-container {
+            position: absolute;
+            bottom: 20px; /* Positioned at the bottom */
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
             color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-align: left;
+            z-index: 10;
+            max-width: 90%; /* Allow container to take more width */
+            font-size: 14px; /* Smaller font size for mobile */
+            overflow: auto; /* Prevents content from being cut off */
+        }
+        .ui-container a {
+            color: #4CAF50;
+            text-decoration: none;
+            display: block;
+            margin-top: 10px;
+        }
+        .ui-container button {
+            display: block;
+            width: 100%; /* Full width */
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: #fff;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            margin-top: 10px; /* Space between link and button */
         }
 
-        /* Button hover effect */
-        .ar-button:hover {
-            background-color: #005A8D;
-        }
-
-        /* Mobile responsiveness */
-        @media (max-width: 600px) {
-            .ar-button {
-                padding: 12px 25px;
-                font-size: 16px;
+        /* Responsive Styles for Mobile Devices */
+        @media only screen and (max-width: 768px) {
+            .ui-container {
+                bottom: 10px; /* Move closer to the bottom */
+                left: 10px;
+                max-width: 90%;
+                font-size: 14px;
+                padding: 8px 16px;
+                overflow-y: auto; /* Allow scrolling in container if text is too long */
+                height: 35vh; /* Limit the container height */
             }
-
-            .container h1 {
-                font-size: 22px;
-            }
-
-            .container p {
-                font-size: 16px;
-            }
-
-            .ar-button-container {
-                bottom: 15px;
+            .ui-container button {
+                font-size: 14px;
+                padding: 8px 16px;
             }
         }
     </style>
+    <!-- Load Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146/build/three.min.js"></script>
+    <!-- Load GLTFLoader -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/loaders/GLTFLoader.js"></script>
+    <!-- Load OrbitControls -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/controls/OrbitControls.js"></script>
 </head>
-
 <body>
-    <!-- Main Content -->
-    <div class="container">
-        <h1>3D Model Viewer</h1>
-        <p>Scan the QR code or click the button to view this model in AR.</p>
+    <div id="model-container">
+        <div class="ui-container">
+            <h2 id="product-name">Loading...</h2>
+            <p id="product-desc">Please wait while we load your model.</p>
+            <a id="product-link" href="#" target="_blank">View Product</a>
+            <button id="ar-button">Start AR</button>
+        </div>
     </div>
-
-    <!-- AR Button -->
-    <div class="ar-button-container">
-        <button class="ar-button" id="ar-button">Start AR</button>
-    </div>
-
-    <!-- JavaScript (inlined) -->
-    <script>
-        document.getElementById('ar-button').addEventListener('click', async () => {
-            console.log('AR button clicked. Attempting to launch AR...');
-
-            if ('xr' in navigator) {
-                try {
-                    const session = await navigator.xr.requestSession('immersive-ar', {
-                        requiredFeatures: ['hit-test']
-                    });
-
-                    console.log('WebXR session started:', session);
-
-                    alert('AR session started!');  // Temporary feedback for now
-
-                    session.addEventListener('end', () => {
-                        console.log('AR session ended.');
-                    });
-                } catch (err) {
-                    console.error('Failed to start AR session:', err);
-                    alert('Failed to start AR: ' + err.message);
-                }
-            } else {
-                console.log('WebXR not supported on this device.');
-                alert('Your browser does not support WebXR!');
-            }
-        });
-    </script>
+    <!-- Load webxr.js as an ES6 module -->
+    <script type="module" src="/webxr.js"></script>
 </body>
 </html>
