@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebXR Model Viewer</title>
+    <title>3D Model Viewer with AR</title>
+
+    <!-- Styling -->
     <style>
         body {
             margin: 0;
@@ -81,11 +83,41 @@
             <h2 id="product-name">Loading...</h2>
             <p id="product-desc">Please wait while we load your model.</p>
             <a id="product-link" href="#" target="_blank">View Product</a>
-            <button id="ar-button">View in AR</button>
+            <button id="ar-button" style="display:none;">View in AR</button>
         </div>
     </div>
 
-    <!-- Load webxr.js -->
-    <script type="module" src="/webxr.js"></script>
+    <!-- Load the script -->
+    <script>
+        // Sample model data (this would usually come from a backend or URL params)
+        const modelData = {
+            name: "Audi A4",
+            desc: "3D Model of an Audi A4",
+            link: "https://www.audi.com/",
+            file: "audi_a4.glb"
+        };
+
+        // Populate UI with model data
+        document.getElementById('product-name').innerText = modelData.name;
+        document.getElementById('product-desc').innerText = modelData.desc;
+        document.getElementById('product-link').href = modelData.link;
+
+        // Load the 3D model into viewer
+        const modelViewer = document.getElementById('viewer');
+        modelViewer.src = `https://3dmodelsproject.pages.dev/models/${modelData.file}`;
+
+        // AR Button setup
+        const arButton = document.getElementById('ar-button');
+
+        // Check if WebXR AR is supported
+        navigator.xr?.isSessionSupported('immersive-ar').then((supported) => {
+            if (supported) {
+                arButton.style.display = 'block';
+                arButton.addEventListener('click', () => {
+                    modelViewer.activateAR();
+                });
+            }
+        });
+    </script>
 </body>
 </html>
