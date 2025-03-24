@@ -49,7 +49,6 @@
             cursor: pointer;
             margin-top: 10px;
         }
-        /* AR-specific styles */
         #ar-prompt {
             position: absolute;
             top: 20px;
@@ -88,14 +87,10 @@
             }
         }
     </style>
-    <!-- Load Three.js -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/build/three.min.js"></script>
-    <!-- Load GLTFLoader -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/loaders/GLTFLoader.js"></script>
-    <!-- Load WebXR polyfill for ARCore/ARKit support -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/webxr-polyfill@latest/build/webxr-polyfill.js"></script>
-    <!-- Load WebXR Manager -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/webxr/WebXRManager.js"></script>
 </head>
 <body>
     <div id="ar-prompt">Move your device to start AR experience</div>
@@ -108,6 +103,6 @@
             <button id="ar-button">Start AR</button>
         </div>
     </div>
-    <script type="module" src="/webxr.js"></script>
+    <script src="/webxr.js"></script>
 </body>
 </html>
