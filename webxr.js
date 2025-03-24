@@ -1,216 +1,217 @@
-// Ensure model data is available and proceed with loading
-window.addEventListener('DOMContentLoaded', () => {
-  if (window.modelData) {
-    console.log('Model data passed to WebXR:', window.modelData);
+// Global variables
+let scene, camera, renderer, controller, model, arSession, arAnchor;
+let touchStartX = 0, touchStartY = 0, touchRotationX = 0, touchRotationY = 0;
+let isTouching = false;
+let hitTestSource = null;
+let refSpace = null;
+let modelPlaced = false;
 
-    // Update UI elements with model info
-    document.getElementById('product-name').innerText = window.modelData.name || 'Loading...';
-    document.getElementById('product-desc').innerText = window.modelData.desc || 'Please wait while we load your model.';
+// Initialize when DOM is loaded
+window.addEventListener('DOMContentLoaded', async () => {
+    if (!window.modelData) {
+        console.error('No model data available');
+        updateLoadingStatus('Error: No model data', true);
+        return;
+    }
+
+    // Initialize WebXR polyfill if needed
+    if (typeof WebXRPolyfill !== 'undefined') {
+        new WebXRPolyfill();
+    }
+
+    // Update UI with model info
+    document.getElementById('product-name').textContent = window.modelData.name || '3D Model';
     document.getElementById('product-link').href = window.modelData.link || '#';
-    document.getElementById('product-link').innerText = 'View Product'; // Ensure the link text is set
+    document.getElementById('ar-product-name').textContent = window.modelData.name || 'AR Model';
+    document.getElementById('ar-product-desc').textContent = window.modelData.desc || '';
 
-    initAR(); // Initialize AR after ensuring model data is ready
-  } else {
-    console.log('No model data found');
-  }
+    try {
+        await initARScene();
+        updateLoadingStatus('Ready to view', false);
+    } catch (error) {
+        console.error('Initialization failed:', error);
+        updateLoadingStatus(`Error: ${error.message}`, true);
+    }
 });
 
-let scene, camera, renderer, controller, model, clock, arSession, arAnchor;
-let isModelInteracted = false;
-let touchStartX = 0;
-let touchStartY = 0;
-let touchRotationX = 0;
-let touchRotationY = 0;
-let isTouching = false; // Track if the user is currently touching the screen
+// Initialize AR scene
+async function initARScene() {
+    // Create Three.js scene
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+    scene.add(camera);
 
-// Initialize the AR scene
-function initAR() {
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
-  scene.add(camera);
+    // Set up renderer with WebXR support
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.xr.enabled = true;
+    document.getElementById('model-container').appendChild(renderer.domElement);
 
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.xr.enabled = true; // Enable WebXR
-  document.getElementById('model-container').appendChild(renderer.domElement);
+    // Add lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+    directionalLight.position.set(1, 1, 1).normalize();
+    scene.add(directionalLight);
 
-  // Clock for animation and movement
-  clock = new THREE.Clock();
+    // Load the 3D model
+    await loadModel();
 
-  // AR Controller
-  controller = renderer.xr.getController(0);
-  scene.add(controller);
+    // Set up AR button
+    document.getElementById('ar-button').addEventListener('click', startARSession);
 
-  // Load the model
-  loadModel();
+    // Set up exit AR button
+    document.getElementById('exit-ar').addEventListener('click', endARSession);
 
-  // Add a light source
-  const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 2);
-  scene.add(light);
+    // Set up interaction handlers
+    setupInteractionHandlers();
 
-  // Add additional lighting
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
-  directionalLight.position.set(1, 1, 1).normalize();
-  scene.add(directionalLight);
+    // Start animation loop
+    renderer.setAnimationLoop(render);
+}
 
-  const ambientLight = new THREE.AmbientLight(0x808080); // Soft white light
-  scene.add(ambientLight);
+// Load 3D model with progress tracking
+async function loadModel() {
+    return new Promise((resolve, reject) => {
+        updateLoadingStatus('Loading 3D model...', false);
+        
+        const modelUrl = window.modelData?.file ? 
+            `https://3dmodelsproject.pages.dev/models/${window.modelData.file}` : 
+            'default.glb';
 
-  // Set up AR session when the AR button is clicked
-  document.getElementById('ar-button').addEventListener('click', () => {
-    navigator.xr.requestSession('immersive-ar', { requiredFeatures: ['local-floor', 'hit-test'] })
-      .then((session) => {
+        const loader = new THREE.GLTFLoader();
+        
+        loader.load(modelUrl, 
+            (gltf) => {
+                if (model) scene.remove(model);
+                
+                model = gltf.scene;
+                
+                // Center and scale model
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                model.position.sub(center);
+                
+                const size = box.getSize(new THREE.Vector3()).length();
+                const scale = 1.0 / size;
+                model.scale.set(scale, scale, scale);
+                
+                // Initial position for non-AR view
+                model.position.set(0, -0.5, -1);
+                scene.add(model);
+                
+                updateLoadingStatus('Model loaded successfully', false);
+                resolve();
+            },
+            (xhr) => {
+                const percent = Math.round((xhr.loaded / xhr.total) * 100);
+                updateLoadingStatus(`Loading model... ${percent}%`, false);
+            },
+            (error) => {
+                console.error('Model loading failed:', error);
+                updateLoadingStatus('Failed to load model', true);
+                reject(error);
+            }
+        );
+    });
+}
+
+// Start AR session with ARCore/ARKit
+async function startARSession() {
+    updateLoadingStatus('Starting AR session...', false);
+    
+    try {
+        // Check if WebXR is supported
+        if (!navigator.xr) {
+            throw new Error('WebXR not available in this browser');
+        }
+
+        // Request AR session with required features
+        const session = await navigator.xr.requestSession('immersive-ar', {
+            requiredFeatures: ['local-floor', 'hit-test', 'dom-overlay'],
+            optionalFeatures: ['anchors'],
+            domOverlay: { root: document.getElementById('ar-ui-container') }
+        });
+
         arSession = session;
         renderer.xr.setSession(session);
-        setupTapToPlace();
-        setupARRotation(); // Enable rotation in AR mode
-      })
-      .catch(console.error);
-  });
-
-  // Handle touch/mouse interaction for rotation and zoom
-  document.addEventListener('mousedown', onMouseDown, false);
-  document.addEventListener('mousemove', onMouseMove, false);
-  document.addEventListener('mouseup', onMouseUp, false);
-  document.addEventListener('wheel', onMouseWheel, false);
-
-  // Handle touch events for mobile
-  document.addEventListener('touchstart', onTouchStart, false);
-  document.addEventListener('touchmove', onTouchMove, false);
-  document.addEventListener('touchend', onTouchEnd, false);
-
-  renderer.setAnimationLoop(render);
-}
-
-// Load the 3D model
-function loadModel() {
-  const modelUrl = window.modelData ? window.modelData.file : 'default.glb';
-  console.log(`Loading model from URL: ${modelUrl}`);
-
-  const cloudflareBaseURL = 'https://3dmodelsproject.pages.dev/models/';
-  const fullModelURL = cloudflareBaseURL + modelUrl;
-
-  const loader = new THREE.GLTFLoader();
-
-  loader.load(fullModelURL, (gltf) => {
-    model = gltf.scene;
-    model.position.set(0, -0.5, -1); // Adjust model position
-
-    // Scale the model to a consistent size
-    const scaleFactor = 0.05; // Adjust this value to control the size of the model
-    model.scale.set(scaleFactor, scaleFactor, scaleFactor);
-
-    scene.add(model);
-
-    setupModelInteraction();
-  }, undefined, function (error) {
-    console.error('Error loading the model:', error);
-  });
-}
-
-// Render the scene
-function render() {
-  if (model) {
-    model.rotation.x = touchRotationX;
-    model.rotation.y = touchRotationY;
-  }
-
-  // Update AR anchor position
-  if (arAnchor) {
-    model.position.set(arAnchor.position.x, arAnchor.position.y, arAnchor.position.z);
-  }
-
-  renderer.render(scene, camera);
-}
-
-// Setup tap-to-place functionality
-function setupTapToPlace() {
-  controller.addEventListener('select', (event) => {
-    const frame = event.frame;
-    const hitTestResults = frame.getHitTestResults(event.inputSource.targetRaySpace);
-
-    if (hitTestResults.length > 0) {
-      const hit = hitTestResults[0];
-      const pose = hit.getPose(renderer.xr.getReferenceSpace());
-      model.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
+        
+        // Set up session event handlers
+        session.addEventListener('end', endARSession);
+        
+        // Switch to AR UI
+        document.getElementById('model-container').style.display = 'none';
+        document.getElementById('ar-ui-container').style.display = 'block';
+        
+        // Initialize AR hit test
+        session.addEventListener('select', onARSelect);
+        
+        // Get reference space
+        refSpace = await session.requestReferenceSpace('local-floor');
+        
+        // Create hit test source
+        const viewerSpace = await session.requestReferenceSpace('viewer');
+        hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
+        
+        modelPlaced = false;
+        updateLoadingStatus('AR session started - look around and tap to place model', false);
+        
+    } catch (error) {
+        console.error('AR session failed:', error);
+        updateLoadingStatus(`AR Error: ${error.message}`, true);
     }
-  });
 }
 
-// Enable rotation in AR mode
-function setupARRotation() {
-  const onTouchMoveAR = (event) => {
-    if (event.touches.length === 1 && isTouching) {
-      const touchEndX = event.touches[0].clientX;
-      const touchEndY = event.touches[0].clientY;
-
-      // Calculate rotation based on touch movement
-      touchRotationX += (touchEndY - touchStartY) * 0.01;
-      touchRotationY += (touchEndX - touchStartX) * 0.01;
-
-      // Update touch start positions for the next move event
-      touchStartX = touchEndX;
-      touchStartY = touchEndY;
+// Handle AR selection (tap to place)
+function onARSelect(event) {
+    if (!modelPlaced && hitTestSource && event.frame && refSpace) {
+        const hitTestResults = event.frame.getHitTestResults(hitTestSource);
+        if (hitTestResults.length > 0) {
+            const hit = hitTestResults[0];
+            const pose = hit.getPose(refSpace);
+            
+            if (pose && model) {
+                // Position model at hit point
+                model.position.set(
+                    pose.transform.position.x,
+                    pose.transform.position.y,
+                    pose.transform.position.z
+                );
+                
+                // Create anchor if supported
+                if (arSession.requestHitTestSourceForTransientInput) {
+                    arSession.requestHitTestSourceForTransientInput({
+                        profile: 'generic-touchscreen',
+                        offsetRay: new XRRay()
+                    }).then((transientHitTestSource) => {
+                        arAnchor = transientHitTestSource;
+                    });
+                }
+                
+                modelPlaced = true;
+                updateLoadingStatus('Model placed - you can now interact with it', false);
+            }
+        }
     }
-  };
+}
 
-  const onTouchStartAR = (event) => {
-    if (event.touches.length === 1) {
-      isTouching = true;
-      touchStartX = event.touches[0].clientX;
-      touchStartY = event.touches[0].clientY;
+// End AR session
+function endARSession() {
+    if (arSession) {
+        arSession.end();
     }
-  };
-
-  const onTouchEndAR = (event) => {
-    isTouching = false;
-  };
-
-  // Add touch event listeners for AR rotation
-  document.addEventListener('touchstart', onTouchStartAR, false);
-  document.addEventListener('touchmove', onTouchMoveAR, false);
-  document.addEventListener('touchend', onTouchEndAR, false);
+    
+    // Reset AR state
+    document.getElementById('model-container').style.display = 'block';
+    document.getElementById('ar-ui-container').style.display = 'none';
+    
+    if (model) {
+        // Reset model position for non-AR view
+        model.position.set(0, -0.5, -1);
+    }
+    
+    modelPlaced = false;
+    updateLoadingStatus('Ready to view', false);
 }
 
-// Mouse and Touch Interaction: Rotation and Zoom (for desktop)
-function onMouseDown(event) {
-  touchStartX = event.clientX;
-  touchStartY = event.clientY;
-}
-
-function onMouseMove(event) {
-  if (event.buttons === 1) { // Left click or touch dragging
-    touchRotationX += (event.clientY - touchStartY) * 0.01;
-    touchRotationY += (event.clientX - touchStartX) * 0.01;
-    touchStartX = event.clientX;
-    touchStartY = event.clientY;
-  }
-}
-
-function onMouseUp(event) {}
-
-function onMouseWheel(event) {
-  if (model) {
-    model.scale.multiplyScalar(1 + event.deltaY * -0.01);
-  }
-}
-
-function onTouchStart(event) {
-  if (event.touches.length === 1) {
-    touchStartX = event.touches[0].clientX;
-    touchStartY = event.touches[0].clientY;
-  }
-}
-
-function onTouchMove(event) {
-  if (event.touches.length === 1) {
-    const deltaX = event.touches[0].clientX - touchStartX;
-    const deltaY = event.touches[0].clientY - touchStartY;
-    touchRotationX += deltaY * 0.01;
-    touchRotationY += deltaX * 0.01;
-    touchStartX = event.touches[0].clientX;
-    touchStartY = event.touches[0].clientY;
-  }
-}
-
-function onTouchEnd(event) {}
+// Set up interaction handlers

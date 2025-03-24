@@ -2,7 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- AR Required Meta Tags -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <!-- Chrome's Origin Trial Token for WebXR -->
+    <meta http-equiv="origin-trial" content="YOUR_ORIGIN_TRIAL_TOKEN_HERE">
+    
     <title>WebXR Model Viewer</title>
     <style>
         body { 
@@ -20,7 +26,7 @@
         }
         .ui-container {
             position: absolute;
-            bottom: 20px; /* Positioned at the bottom */
+            bottom: 20px;
             left: 10px;
             background: rgba(0, 0, 0, 0.7);
             color: white;
@@ -28,63 +34,131 @@
             border-radius: 10px;
             text-align: left;
             z-index: 10;
-            max-width: 90%; /* Allow container to take more width */
-            font-size: 14px; /* Smaller font size for mobile */
-            overflow: auto; /* Prevents content from being cut off */
+            max-width: 90%;
+            font-size: 14px;
+            overflow: auto;
         }
-        .ui-container a {
-            color: #4CAF50;
-            text-decoration: none;
-            display: block;
-            margin-top: 10px;
+        /* AR UI Styles */
+        #ar-ui-container {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            z-index: 100;
         }
-        .ui-container button {
-            display: block;
-            width: 100%; /* Full width */
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #4CAF50;
-            color: #fff;
+        .ar-ui-content {
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            display: inline-block;
+            max-width: 90%;
+            margin: 0 auto;
+        }
+        #exit-ar {
+            background: #ff4444;
+            color: white;
             border: none;
+            padding: 10px 20px;
             border-radius: 5px;
+            margin-top: 10px;
+            font-size: 16px;
             cursor: pointer;
-            margin-top: 10px; /* Space between link and button */
         }
-
-        /* Responsive Styles for Mobile Devices */
+        /* Loading Indicator */
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid #4CAF50;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Responsive Styles */
         @media only screen and (max-width: 768px) {
             .ui-container {
-                bottom: 10px; /* Move closer to the bottom */
+                bottom: 10px;
                 left: 10px;
                 max-width: 90%;
                 font-size: 14px;
                 padding: 8px 16px;
-                overflow-y: auto; /* Allow scrolling in container if text is too long */
-                height: 35vh; /* Limit the container height */
+                overflow-y: auto;
+                height: 35vh;
             }
             .ui-container button {
                 font-size: 14px;
                 padding: 8px 16px;
             }
+            .ar-ui-content {
+                padding: 10px;
+            }
         }
     </style>
-    <!-- Load Three.js -->
+    <!-- Three.js and AR dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/build/three.min.js"></script>
-    <!-- Load GLTFLoader -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/loaders/GLTFLoader.js"></script>
-    <!-- Load OrbitControls -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/controls/OrbitControls.js"></script>
+    <!-- WebXR Polyfill for broader device support -->
+    <script src="https://cdn.jsdelivr.net/npm/webxr-polyfill@latest/build/webxr-polyfill.js"></script>
 </head>
 <body>
     <div id="model-container">
         <div class="ui-container">
             <h2 id="product-name">Loading...</h2>
-            <p id="product-desc">Please wait while we load your model.</p>
-            <a id="product-link" href="#" target="_blank">View Product</a>
-            <button id="ar-button">Start AR</button>
+            <p id="product-desc">
+                <div class="loading-spinner"></div>
+                <span id="loading-text">Initializing 3D viewer...</span>
+            </p>
+            <a id="product-link" href="#" target="_blank">View Product Details</a>
+            <button id="ar-button">Start AR Experience</button>
+            <div id="ar-support-message" style="margin-top: 10px; color: #ffcc00;"></div>
         </div>
     </div>
-    <!-- Load webxr.js as an ES6 module -->
+
+    <!-- AR Mode UI -->
+    <div id="ar-ui-container">
+        <div class="ar-ui-content">
+            <h3 id="ar-product-name"></h3>
+            <p id="ar-product-desc"></p>
+            <button id="exit-ar">Exit AR</button>
+        </div>
+    </div>
+
+    <!-- WebXR Script -->
     <script type="module" src="/webxr.js"></script>
+    
+    <!-- ARCore/ARKit detection script -->
+    <script>
+        // Check for AR support when page loads
+        document.addEventListener('DOMContentLoaded', async () => {
+            const arButton = document.getElementById('ar-button');
+            const supportMessage = document.getElementById('ar-support-message');
+            
+            if (!navigator.xr) {
+                supportMessage.textContent = 'AR not available in this browser. Try Chrome (Android) or Safari (iOS).';
+                arButton.disabled = true;
+                return;
+            }
+            
+            try {
+                const isARSupported = await navigator.xr.isSessionSupported('immersive-ar');
+                if (!isARSupported) {
+                    supportMessage.textContent = 'AR requires ARCore (Android) or ARKit (iOS). Install these to continue.';
+                    arButton.disabled = true;
+                }
+            } catch (error) {
+                console.error('AR detection failed:', error);
+                supportMessage.textContent = 'Could not detect AR support. Try again later.';
+                arButton.disabled = true;
+            }
+        });
+    </script>
 </body>
 </html>
