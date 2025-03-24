@@ -1,4 +1,4 @@
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', () => { 
   if (window.modelData) {
     console.log('Model data passed to WebXR:', window.modelData);
 
