@@ -47,7 +47,6 @@ function initScene() {
     renderer.setAnimationLoop(render);
 }
 
-// Load model function
 function loadModel() {
     const modelUrl = window.modelData?.file || 'default.glb';
     const loader = new THREE.GLTFLoader();
@@ -77,7 +76,6 @@ function loadModel() {
     );
 }
 
-// AR session management
 async function toggleAR() {
     if (isInARMode) {
         endAR();
@@ -141,23 +139,6 @@ async function startAR() {
         });
         scene.add(controller);
 
-        // AR render loop
-        renderer.setAnimationLoop((timestamp, frame) => {
-            if (!frame) return;
-
-            if (hitTestSource && model) {
-                const hitTestResults = frame.getHitTestResults(hitTestSource);
-                if (hitTestResults.length > 0) {
-                    const pose = hitTestResults[0].getPose(referenceSpace);
-                    reticle.visible = true;
-                    reticle.position.setFromMatrixPosition(pose.transform.matrix);
-                } else {
-                    reticle.visible = false;
-                }
-            }
-            renderer.render(scene, camera);
-        });
-
     } catch (error) {
         console.error('AR Error:', error);
         document.getElementById('ar-error').textContent = error.message;
@@ -184,21 +165,28 @@ function endAR() {
     initScene();
 }
 
-// Interaction setup
 function setupInteraction() {
     const container = document.getElementById('model-container');
     
+    // Clear existing listeners
+    container.removeEventListener('mousedown', onPointerStart);
+    container.removeEventListener('mousemove', onPointerMove);
+    container.removeEventListener('mouseup', onPointerEnd);
+    container.removeEventListener('wheel', onMouseWheel);
+    container.removeEventListener('touchstart', onPointerStart);
+    container.removeEventListener('touchmove', onPointerMove);
+    container.removeEventListener('touchend', onPointerEnd);
+
+    // Add new listeners
     container.addEventListener('mousedown', onPointerStart);
     container.addEventListener('mousemove', onPointerMove);
     container.addEventListener('mouseup', onPointerEnd);
     container.addEventListener('wheel', onMouseWheel);
-    
     container.addEventListener('touchstart', onPointerStart);
     container.addEventListener('touchmove', onPointerMove);
     container.addEventListener('touchend', onPointerEnd);
 }
 
-// Event handlers
 function onPointerStart(event) {
     if (isInARMode) return;
     
@@ -246,7 +234,6 @@ function onMouseWheel(event) {
     model.scale.set(currentScale, currentScale, currentScale);
 }
 
-// Render function
 function render() {
     if (model && !isInARMode) {
         model.rotation.x = touchRotationX;
@@ -255,13 +242,16 @@ function render() {
     renderer.render(scene, camera);
 }
 
-// Initialize
-window.addEventListener('DOMContentLoaded', () => {
+// Initialize everything after DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    // Setup AR button handler first
+    document.getElementById('ar-button').addEventListener('click', toggleAR);
+    
+    // Then check for model data and initialize
     if (window.modelData) {
         document.getElementById('product-name').innerText = window.modelData.name || '3D Model';
         document.getElementById('product-desc').innerText = window.modelData.desc || '';
         document.getElementById('product-link').href = window.modelData.link || '#';
-        document.getElementById('ar-button').addEventListener('click', toggleAR);
         initScene();
     } else {
         console.error('No model data found');
