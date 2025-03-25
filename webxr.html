@@ -111,42 +111,12 @@
             }
         }
     </style>
-    <!-- Three.js and dependencies -->
+
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/pmrem/PMREMGenerator.js"></script>
-    
-    <script>
-        // AR availability check
-        if (navigator.xr) {
-            navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
-                if (!supported) {
-                    const arButton = document.getElementById('ar-button');
-                    if (arButton) {
-                        arButton.style.display = 'none';
-                        const arMessage = document.createElement('p');
-                        arMessage.textContent = 'AR not available on this device';
-                        arMessage.style.color = '#ff9800';
-                        document.querySelector('.ui-container').appendChild(arMessage);
-                    }
-                }
-            });
-        } else {
-            const arButton = document.getElementById('ar-button');
-            if (arButton) arButton.style.display = 'none';
-        }
 
-        // Toggle description expansion
-        document.addEventListener('DOMContentLoaded', function() {
-            const desc = document.getElementById('product-desc');
-            if (desc) {
-                desc.addEventListener('click', function() {
-                    this.classList.toggle('expanded');
-                });
-            }
-        });
-    </script>
 </head>
 <body>
     <div id="model-container">
