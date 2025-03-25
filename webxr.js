@@ -126,30 +126,60 @@ async function startAR() {
           return;
       }
 
-      // Request AR session
-      xrSession = await navigator.xr.requestSession('immersive-ar', {
-          requiredFeatures: ['hit-test', 'dom-overlay'],
+      // Request AR session with appropriate options
+      const sessionInit = { 
+          optionalFeatures: ['dom-overlay'],
           domOverlay: { root: document.body }
-      });
+      };
+
+      // Try with hit-test first, but don't require it
+      try {
+          xrSession = await navigator.xr.requestSession('immersive-ar', {
+              requiredFeatures: ['hit-test'],
+              ...sessionInit
+          });
+      } catch (e) {
+          console.log('Hit-test not available, trying without it');
+          xrSession = await navigator.xr.requestSession('immersive-ar', sessionInit);
+      }
 
       // Set up session event listeners
       xrSession.addEventListener('end', onXRSessionEnded);
 
-      // Set up the XR renderer and reference space
+      // Set up the XR renderer
       await renderer.xr.setSession(xrSession);
-      xrReferenceSpace = await xrSession.requestReferenceSpace('local');
 
-      // Request hit test source
-      hitTestSource = await xrSession.requestHitTestSource({ space: xrReferenceSpace });
+      // Try different reference spaces
+      try {
+          xrReferenceSpace = await xrSession.requestReferenceSpace('local');
+      } catch (e) {
+          console.log('Local reference space not available, trying viewer');
+          try {
+              xrReferenceSpace = await xrSession.requestReferenceSpace('viewer');
+          } catch (e) {
+              console.log('Viewer reference space not available, trying local-floor');
+              xrReferenceSpace = await xrSession.requestReferenceSpace('local-floor');
+          }
+      }
 
-      // Create reticle for placement
-      reticle = new THREE.Mesh(
-          new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
-          new THREE.MeshBasicMaterial({ color: 0xffffff })
-      );
-      reticle.matrixAutoUpdate = false;
-      reticle.visible = false;
-      scene.add(reticle);
+      // Try to get hit test source if supported
+      if (xrReferenceSpace && xrSession.enabledFeatures.includes('hit-test')) {
+          try {
+              hitTestSource = await xrSession.requestHitTestSource({ space: xrReferenceSpace });
+              
+              // Create reticle for placement
+              reticle = new THREE.Mesh(
+                  new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
+                  new THREE.MeshBasicMaterial({ color: 0xffffff })
+              );
+              reticle.matrixAutoUpdate = false;
+              reticle.visible = false;
+              scene.add(reticle);
+          } catch (e) {
+              console.error('Hit test source creation failed:', e);
+              hitTestSource = null;
+          }
+      }
 
       // Set up controller
       controller = renderer.xr.getController(0);
@@ -160,7 +190,7 @@ async function startAR() {
       document.querySelector('.ui-container').style.display = 'none';
       document.getElementById('exit-ar-button').style.display = 'block';
 
-      console.log('AR session started successfully');
+      console.log('AR session started successfully with reference space:', xrReferenceSpace);
   } catch (error) {
       console.error('AR Error:', error);
       alert(`AR failed: ${error.message}`);
@@ -214,6 +244,10 @@ function onSelect() {
   if (reticle && reticle.visible && model) {
       model.position.copy(reticle.position);
       model.quaternion.copy(reticle.quaternion);
+  } else if (model) {
+      // If no reticle, just place the model in front of the viewer
+      model.position.set(0, 0, -1.5);
+      model.quaternion.identity();
   }
 }
 
@@ -271,17 +305,21 @@ function onWindowResize() {
 
 // Render loop
 function render(timestamp, frame) {
-  if (xrSession && frame && hitTestSource && model) {
-      // In AR mode, handle hit testing
-      const hitTestResults = frame.getHitTestResults(hitTestSource);
-      
-      if (hitTestResults.length > 0) {
-          const hit = hitTestResults[0];
-          const pose = hit.getPose(xrReferenceSpace);
-          reticle.visible = true;
-          reticle.matrix.fromArray(pose.transform.matrix);
-      } else {
-          reticle.visible = false;
+  if (xrSession && frame) {
+      // In AR mode
+      if (hitTestSource) {
+          const hitTestResults = frame.getHitTestResults(hitTestSource);
+          
+          if (hitTestResults.length > 0) {
+              const hit = hitTestResults[0];
+              const pose = hit.getPose(xrReferenceSpace);
+              if (reticle && pose) {
+                  reticle.visible = true;
+                  reticle.matrix.fromArray(pose.transform.matrix);
+              }
+          } else if (reticle) {
+              reticle.visible = false;
+          }
       }
   }
 
