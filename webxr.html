@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>WebXR Model Viewer</title>
     <style>
         body { 
@@ -12,6 +12,7 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
+            background-color: #fff; /* Ensures white background */
         }
         #model-container {
             flex: 1;
@@ -20,7 +21,7 @@
         }
         .ui-container {
             position: absolute;
-            bottom: 45px;
+            bottom: 10px;
             left: 10px;
             right: 10px;
             background: rgba(0, 0, 0, 0.7);
@@ -35,7 +36,6 @@
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             box-sizing: border-box;
-            box-shadow: 0 -5px 10px rgba(0,0,0,0.2);
         }
         .ui-container a {
             color: #4CAF50;
@@ -68,85 +68,24 @@
             border-radius: 5px;
             transition: width 0.3s;
         }
-        #product-name {
-            font-size: 18px;
-            margin: 0 0 6px 0;
-        }
-        #product-desc {
-            font-size: 14px;
-            line-height: 1.4;
-            margin: 0 0 8px 0;
-            max-height: 4.2em;
-            overflow: hidden;
-            transition: max-height 0.3s;
-        }
-        #product-desc.expanded {
-            max-height: none;
+        #ar-error {
+            color: #ff9800;
+            margin-top: 8px;
+            display: none;
         }
 
-        /* Small mobile devices */
         @media only screen and (max-width: 375px) {
             .ui-container {
                 padding: 10px 12px;
                 max-height: 55vh;
                 font-size: 13px;
             }
-            #product-name {
-                font-size: 16px;
-            }
-            #product-desc {
-                font-size: 13px;
-                max-height: 3.6em;
-            }
-            .ui-container button {
-                padding: 8px 12px;
-                font-size: 14px;
-            }
-        }
-
-        /* Larger mobile devices */
-        @media only screen and (min-width: 376px) and (max-width: 768px) {
-            .ui-container {
-                max-height: 45vh;
-            }
         }
     </style>
     <!-- Three.js and dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/pmrem/PMREMGenerator.js"></script>
-    
-    <script>
-        // AR availability check
-        if (navigator.xr) {
-            navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
-                if (!supported) {
-                    const arButton = document.getElementById('ar-button');
-                    if (arButton) {
-                        arButton.style.display = 'none';
-                        const arMessage = document.createElement('p');
-                        arMessage.textContent = 'AR not available on this device';
-                        arMessage.style.color = '#ff9800';
-                        document.querySelector('.ui-container').appendChild(arMessage);
-                    }
-                }
-            });
-        } else {
-            const arButton = document.getElementById('ar-button');
-            if (arButton) arButton.style.display = 'none';
-        }
-
-        // Toggle description expansion
-        document.addEventListener('DOMContentLoaded', function() {
-            const desc = document.getElementById('product-desc');
-            if (desc) {
-                desc.addEventListener('click', function() {
-                    this.classList.toggle('expanded');
-                });
-            }
-        });
-    </script>
 </head>
 <body>
     <div id="model-container">
@@ -156,6 +95,7 @@
             <div id="loading-bar"><div id="loading-progress"></div></div>
             <a id="product-link" href="#" target="_blank">View Product</a>
             <button id="ar-button">Start AR</button>
+            <p id="ar-error"></p>
         </div>
     </div>
     <script src="/webxr.js"></script>
