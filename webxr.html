@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>WebXR Model Viewer</title>
     <style>
         body { 
@@ -83,6 +85,19 @@
         #product-desc.expanded {
             max-height: none;
         }
+        #exit-ar-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: none;
+            padding: 10px 15px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
 
         /* Small mobile devices */
         @media only screen and (max-width: 375px) {
@@ -116,11 +131,26 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/pmrem/PMREMGenerator.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/webxr/XRControllerModelFactory.js"></script>
     
     <script>
-        // AR availability check
-        if (navigator.xr) {
-            navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
+        // Check for WebXR support
+        async function checkXRSupport() {
+            if (!navigator.xr) {
+                console.log('WebXR not supported');
+                const arButton = document.getElementById('ar-button');
+                if (arButton) {
+                    arButton.style.display = 'none';
+                    const arMessage = document.createElement('p');
+                    arMessage.textContent = 'AR not available on this device';
+                    arMessage.style.color = '#ff9800';
+                    document.querySelector('.ui-container').appendChild(arMessage);
+                }
+                return false;
+            }
+
+            try {
+                const supported = await navigator.xr.isSessionSupported('immersive-ar');
                 if (!supported) {
                     const arButton = document.getElementById('ar-button');
                     if (arButton) {
@@ -131,10 +161,11 @@
                         document.querySelector('.ui-container').appendChild(arMessage);
                     }
                 }
-            });
-        } else {
-            const arButton = document.getElementById('ar-button');
-            if (arButton) arButton.style.display = 'none';
+                return supported;
+            } catch (error) {
+                console.error('Error checking XR support:', error);
+                return false;
+            }
         }
 
         // Toggle description expansion
@@ -145,6 +176,9 @@
                     this.classList.toggle('expanded');
                 });
             }
+            
+            // Check XR support when page loads
+            checkXRSupport();
         });
     </script>
 </head>
@@ -158,6 +192,7 @@
             <button id="ar-button">Start AR</button>
         </div>
     </div>
+    <button id="exit-ar-button">Exit AR</button>
     <script src="/webxr.js"></script>
 </body>
 </html>

@@ -9,7 +9,7 @@ window.addEventListener('DOMContentLoaded', () => {
       document.getElementById('product-link').href = window.modelData.link || '#';
       document.getElementById('product-link').innerText = 'View Product';
 
-      initAR(); // Initialize AR after ensuring model data is ready
+      initScene(); // Initialize the scene
   } else {
       console.error('No model data found');
       document.getElementById('product-desc').innerText = 'Error: Model data missing';
@@ -21,12 +21,17 @@ let isTouching = false;
 let touchStartX = 0, touchStartY = 0;
 let touchRotationX = 0, touchRotationY = 0;
 let currentScale = 1;
+let xrSession = null;
+let hitTestSource = null;
+let xrReferenceSpace = null;
+let controls;
 
-// Initialize the AR scene
-function initAR() {
+// Initialize the scene
+function initScene() {
   // Scene setup
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.set(0, 1.6, 3);
   scene.add(camera);
 
   // Renderer with WebXR support
@@ -46,15 +51,12 @@ function initAR() {
   directionalLight.position.set(1, 1, 1).normalize();
   scene.add(directionalLight);
 
-  // Controller
-  controller = renderer.xr.getController(0);
-  scene.add(controller);
-
   // Load model
   loadModel();
 
   // AR Button event
   document.getElementById('ar-button').addEventListener('click', startAR);
+  document.getElementById('exit-ar-button').addEventListener('click', endAR);
 
   // Interaction handlers
   setupInteraction();
@@ -114,50 +116,104 @@ function loadModel() {
 // AR Session Start
 async function startAR() {
   try {
-      if (!navigator.xr) throw new Error('WebXR not supported');
-      
-      const session = await navigator.xr.requestSession('immersive-ar', {
+      if (!navigator.xr) {
+          throw new Error('WebXR not supported');
+      }
+
+      // Check if we're already in an AR session
+      if (xrSession) {
+          console.log('AR session already active');
+          return;
+      }
+
+      // Request AR session
+      xrSession = await navigator.xr.requestSession('immersive-ar', {
           requiredFeatures: ['hit-test', 'dom-overlay'],
           domOverlay: { root: document.body }
       });
 
-      renderer.xr.setSession(session);
-      
-      // AR reticle for placement
+      // Set up session event listeners
+      xrSession.addEventListener('end', onXRSessionEnded);
+
+      // Set up the XR renderer and reference space
+      await renderer.xr.setSession(xrSession);
+      xrReferenceSpace = await xrSession.requestReferenceSpace('local');
+
+      // Request hit test source
+      hitTestSource = await xrSession.requestHitTestSource({ space: xrReferenceSpace });
+
+      // Create reticle for placement
       reticle = new THREE.Mesh(
           new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
           new THREE.MeshBasicMaterial({ color: 0xffffff })
       );
+      reticle.matrixAutoUpdate = false;
       reticle.visible = false;
       scene.add(reticle);
 
-      // Hit test source
-      const referenceSpace = await session.requestReferenceSpace('local');
-      const hitTestSource = await session.requestHitTestSource({ space: referenceSpace });
+      // Set up controller
+      controller = renderer.xr.getController(0);
+      controller.addEventListener('select', onSelect);
+      scene.add(controller);
 
-      controller.addEventListener('select', () => {
-          if (reticle.visible && model) {
-              model.position.copy(reticle.position);
-          }
-      });
+      // Update UI for AR mode
+      document.querySelector('.ui-container').style.display = 'none';
+      document.getElementById('exit-ar-button').style.display = 'block';
 
-      renderer.setAnimationLoop(() => {
-          if (session && hitTestSource && model) {
-              const frame = renderer.xr.getFrame();
-              const hitTestResults = frame.getHitTestResults(hitTestSource);
-              
-              if (hitTestResults.length > 0) {
-                  const pose = hitTestResults[0].getPose(referenceSpace);
-                  reticle.visible = true;
-                  reticle.position.setFromMatrixPosition(pose.transform.matrix);
-              } else {
-                  reticle.visible = false;
-              }
-          }
-      });
+      console.log('AR session started successfully');
   } catch (error) {
       console.error('AR Error:', error);
       alert(`AR failed: ${error.message}`);
+      if (xrSession) {
+          xrSession.end().catch(e => console.error('Error ending session:', e));
+          xrSession = null;
+      }
+  }
+}
+
+// Handle XR session end
+function onXRSessionEnded() {
+  if (xrSession) {
+      xrSession.removeEventListener('end', onXRSessionEnded);
+      xrSession = null;
+      hitTestSource = null;
+      xrReferenceSpace = null;
+      
+      // Clean up AR-specific elements
+      if (reticle) {
+          scene.remove(reticle);
+          reticle = null;
+      }
+      
+      if (controller) {
+          scene.remove(controller);
+          controller = null;
+      }
+      
+      // Restore UI
+      document.querySelector('.ui-container').style.display = 'block';
+      document.getElementById('exit-ar-button').style.display = 'none';
+      
+      console.log('AR session ended');
+  }
+}
+
+// End AR session
+async function endAR() {
+  if (xrSession) {
+      try {
+          await xrSession.end();
+      } catch (error) {
+          console.error('Error ending AR session:', error);
+      }
+  }
+}
+
+// Handle controller select event
+function onSelect() {
+  if (reticle && reticle.visible && model) {
+      model.position.copy(reticle.position);
+      model.quaternion.copy(reticle.quaternion);
   }
 }
 
@@ -175,13 +231,15 @@ function setupInteraction() {
 
 // Event handlers
 function onPointerStart(event) {
+  if (xrSession) return; // Don't handle these events in AR mode
+  
   isTouching = true;
   touchStartX = event.clientX || event.touches[0].clientX;
   touchStartY = event.clientY || event.touches[0].clientY;
 }
 
 function onPointerMove(event) {
-  if (!isTouching || !model) return;
+  if (!isTouching || !model || xrSession) return;
   
   const clientX = event.clientX || event.touches[0].clientX;
   const clientY = event.clientY || event.touches[0].clientY;
@@ -198,7 +256,7 @@ function onPointerEnd() {
 }
 
 function onMouseWheel(event) {
-  if (!model) return;
+  if (!model || xrSession) return;
   event.preventDefault();
   currentScale *= 1 + event.deltaY * -0.001;
   currentScale = Math.max(0.1, Math.min(currentScale, 2.0));
@@ -212,10 +270,26 @@ function onWindowResize() {
 }
 
 // Render loop
-function render() {
-  if (model) {
+function render(timestamp, frame) {
+  if (xrSession && frame && hitTestSource && model) {
+      // In AR mode, handle hit testing
+      const hitTestResults = frame.getHitTestResults(hitTestSource);
+      
+      if (hitTestResults.length > 0) {
+          const hit = hitTestResults[0];
+          const pose = hit.getPose(xrReferenceSpace);
+          reticle.visible = true;
+          reticle.matrix.fromArray(pose.transform.matrix);
+      } else {
+          reticle.visible = false;
+      }
+  }
+
+  if (model && !xrSession) {
+      // Only rotate model when not in AR mode
       model.rotation.x = touchRotationX;
       model.rotation.y = touchRotationY;
   }
+  
   renderer.render(scene, camera);
 }
