@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>WebXR Model Viewer</title>
     <style>
         body { 
@@ -34,6 +35,9 @@
             font-size: 14px;
             max-height: 50vh;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            box-sizing: border-box;
+            box-shadow: 0 -5px 10px rgba(0,0,0,0.2);
         }
         .ui-container a {
             color: #4CAF50;
@@ -66,10 +70,20 @@
             border-radius: 5px;
             transition: width 0.3s;
         }
-        #ar-support-message {
-            color: #ff9800;
-            margin-top: 10px;
+        #product-name {
+            font-size: 18px;
+            margin: 0 0 6px 0;
+        }
+        #product-desc {
             font-size: 14px;
+            line-height: 1.4;
+            margin: 0 0 8px 0;
+            max-height: 4.2em;
+            overflow: hidden;
+            transition: max-height 0.3s;
+        }
+        #product-desc.expanded {
+            max-height: none;
         }
         #exit-ar-button {
             position: fixed;
@@ -84,6 +98,7 @@
             border-radius: 5px;
             cursor: pointer;
         }
+
         .ar-tooltip {
             position: fixed;
             bottom: 100px;
@@ -94,68 +109,93 @@
             background: rgba(0,0,0,0.6);
             padding: 10px;
             z-index: 1000;
+            transition: opacity 0.3s;
             border-radius: 10px;
             margin: 0 20px;
             backdrop-filter: blur(5px);
             -webkit-backdrop-filter: blur(5px);
-            display: none;
+        }
+
+        /* Small mobile devices */
+        @media only screen and (max-width: 375px) {
+            .ui-container {
+                padding: 10px 12px;
+                max-height: 55vh;
+                font-size: 13px;
+            }
+            #product-name {
+                font-size: 16px;
+            }
+            #product-desc {
+                font-size: 13px;
+                max-height: 3.6em;
+            }
+            .ui-container button {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+        }
+
+        /* Larger mobile devices */
+        @media only screen and (min-width: 376px) and (max-width: 768px) {
+            .ui-container {
+                max-height: 45vh;
+            }
         }
     </style>
+    <!-- Three.js and dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/pmrem/PMREMGenerator.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/webxr/XRControllerModelFactory.js"></script>
+    
     <script>
-        async function checkARSupport() {
-            const arButton = document.getElementById('ar-button');
-            const arMessage = document.getElementById('ar-support-message') || document.createElement('p');
-            arMessage.id = 'ar-support-message';
-            
+        // Check for WebXR support
+        async function checkXRSupport() {
             if (!navigator.xr) {
-                arMessage.textContent = 'AR not available (WebXR not supported)';
-                arButton.style.display = 'none';
-                document.querySelector('.ui-container').appendChild(arMessage);
+                console.log('WebXR not supported');
+                const arButton = document.getElementById('ar-button');
+                if (arButton) {
+                    arButton.style.display = 'none';
+                    const arMessage = document.createElement('p');
+                    arMessage.textContent = 'AR not available on this device';
+                    arMessage.style.color = '#ff9800';
+                    document.querySelector('.ui-container').appendChild(arMessage);
+                }
                 return false;
             }
 
             try {
                 const supported = await navigator.xr.isSessionSupported('immersive-ar');
                 if (!supported) {
-                    arMessage.textContent = 'AR not available (No ARCore/ARKit)';
-                    arButton.style.display = 'none';
-                } else {
-                    // Additional iOS-specific check
-                    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                        const isIOS13Plus = /OS 1[3-9]|OS [2-9]\d/.test(navigator.userAgent);
-                        if (!isIOS13Plus) {
-                            arMessage.textContent = 'Requires iOS 13+ for AR';
-                            arButton.style.display = 'none';
-                            return false;
-                        }
+                    const arButton = document.getElementById('ar-button');
+                    if (arButton) {
+                        arButton.style.display = 'none';
+                        const arMessage = document.createElement('p');
+                        arMessage.textContent = 'AR not available on this device';
+                        arMessage.style.color = '#ff9800';
+                        document.querySelector('.ui-container').appendChild(arMessage);
                     }
-                    arButton.style.display = 'block';
-                    arMessage.textContent = 'AR available - Tap to start';
-                    arMessage.style.color = '#4CAF50';
                 }
-                document.querySelector('.ui-container').appendChild(arMessage);
                 return supported;
             } catch (error) {
-                arMessage.textContent = 'AR check failed';
-                arButton.style.display = 'none';
-                document.querySelector('.ui-container').appendChild(arMessage);
+                console.error('Error checking XR support:', error);
                 return false;
             }
         }
 
+        // Toggle description expansion
         document.addEventListener('DOMContentLoaded', function() {
-            checkARSupport();
-            
             const desc = document.getElementById('product-desc');
             if (desc) {
                 desc.addEventListener('click', function() {
                     this.classList.toggle('expanded');
                 });
             }
+            
+            // Check XR support when page loads
+            checkXRSupport();
         });
     </script>
 </head>
@@ -167,11 +207,12 @@
             <div id="loading-bar"><div id="loading-progress"></div></div>
             <a id="product-link" href="#" target="_blank">View Product</a>
             <button id="ar-button">Start AR</button>
-            <p id="ar-support-message"></p>
         </div>
     </div>
     <button id="exit-ar-button">Exit AR</button>
-    <div id="ar-tooltip">Tap to place, then tap and hold to move</div>
     <script src="/webxr.js"></script>
+    <div id="ar-tooltip" class="ar-tooltip" style="display:none;">
+        Tap to place, then tap and hold to move
+    </div>
 </body>
 </html>
