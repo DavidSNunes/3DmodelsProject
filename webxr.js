@@ -124,85 +124,97 @@ window.addEventListener('DOMContentLoaded', () => {
   
   // AR Session Start
   async function startAR() {
-      try {
-          if (!navigator.xr) {
-              throw new Error('WebXR not supported');
-          }
-  
-          if (xrSession) {
-              console.log('AR session already active');
-              return;
-          }
-  
-          // Show AR tooltip
-          document.getElementById('ar-tooltip').style.display = 'block';
-  
-          const sessionInit = { 
-              optionalFeatures: ['dom-overlay', 'hit-test', 'anchors'],
-              domOverlay: { root: document.body }
-          };
-  
-          xrSession = await navigator.xr.requestSession('immersive-ar', sessionInit);
-          xrSession.addEventListener('end', onXRSessionEnded);
-          await renderer.xr.setSession(xrSession);
-  
-          // Get the best reference space
-          const referenceSpaceTypes = ['local', 'local-floor', 'viewer'];
-          for (const type of referenceSpaceTypes) {
-              try {
-                  xrReferenceSpace = await xrSession.requestReferenceSpace(type);
-                  console.log(`Using reference space: ${type}`);
-                  break;
-              } catch (e) {
-                  console.log(`${type} space not supported`);
-              }
-          }
-  
-          if (!xrReferenceSpace) {
-              throw new Error("Couldn't establish any reference space");
-          }
-  
-          // Initialize AR features
-          initARFeatures();
-          
-          // Update UI
-          document.querySelector('.ui-container').style.display = 'none';
-          document.getElementById('exit-ar-button').style.display = 'block';
-          
-      } catch (error) {
-          console.error('AR Error:', error);
-          alert(`AR failed: ${error.message}`);
-          if (xrSession) {
-              xrSession.end().catch(e => console.error('Error ending session:', e));
-          }
-          document.getElementById('ar-tooltip').style.display = 'none';
-      }
-  }
-  
-  function initARFeatures() {
-      // AR Reticle for placement
-      reticle = new THREE.Mesh(
-          new THREE.RingGeometry(0.1, 0.2, 32).rotateX(-Math.PI / 2),
-          new THREE.MeshBasicMaterial({ color: 0xffffff })
-      );
-      reticle.matrixAutoUpdate = false;
-      reticle.visible = false;
-      scene.add(reticle);
-  
-      // Controller setup
-      controller = renderer.xr.getController(0);
-      controller.addEventListener('selectstart', onSelectStart);
-      controller.addEventListener('selectend', onSelectEnd);
-      scene.add(controller);
-  
-      // Hit test source
-      xrSession.requestHitTestSource({ space: xrReferenceSpace }).then(source => {
-          hitTestSource = source;
-      });
-  
-      // Reset AR state
-      resetARState();
-  }
+    try {
+        if (!navigator.xr) {
+            throw new Error('WebXR not supported');
+        }
+
+        // Check if we're already in an AR session
+        if (xrSession) {
+            console.log('AR session already active');
+            return;
+        }
+
+        // First try with minimal requirements
+        const sessionInit = { 
+            optionalFeatures: ['dom-overlay'],
+            domOverlay: { root: document.body }
+        };
+
+        xrSession = await navigator.xr.requestSession('immersive-ar', sessionInit);
+        xrSession.addEventListener('end', onXRSessionEnded);
+        await renderer.xr.setSession(xrSession);
+
+        // Try to get the simplest reference space first
+        try {
+            xrReferenceSpace = await xrSession.requestReferenceSpace('viewer');
+            console.log('Using viewer reference space');
+        } catch (viewerError) {
+            console.log('Viewer space not supported, trying local-floor');
+            try {
+                xrReferenceSpace = await xrSession.requestReferenceSpace('local-floor');
+                console.log('Using local-floor reference space');
+            } catch (localFloorError) {
+                console.log('No supported reference space found');
+                throw new Error("Your device doesn't support stable AR placement");
+            }
+        }
+
+        // Initialize AR features
+        initARFeatures();
+        
+        // Update UI
+        document.querySelector('.ui-container').style.display = 'none';
+        document.getElementById('exit-ar-button').style.display = 'block';
+        document.getElementById('ar-tooltip').style.display = 'block';
+        
+    } catch (error) {
+        console.error('AR Error:', error);
+        
+        // User-friendly error messages
+        let errorMessage = 'AR failed to start';
+        if (error.message.includes('reference space')) {
+            errorMessage = "Your device doesn't support full AR features. Try a newer smartphone with ARCore/ARKit.";
+        } else if (error.message.includes('not supported')) {
+            errorMessage = "AR not available on this device";
+        }
+        
+        alert(errorMessage);
+        
+        // Clean up if session was partially created
+        if (xrSession) {
+            xrSession.end().catch(e => console.error('Error ending session:', e));
+            xrSession = null;
+        }
+        document.getElementById('ar-tooltip').style.display = 'none';
+    }
+}
+
+function initARFeatures() {
+    // Simplified reticle that works without hit-test
+    reticle = new THREE.Mesh(
+        new THREE.RingGeometry(0.1, 0.2, 32).rotateX(-Math.PI / 2),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+    );
+    reticle.visible = false;
+    scene.add(reticle);
+
+    // Basic controller setup
+    controller = renderer.xr.getController(0);
+    controller.addEventListener('selectstart', onSelectStart);
+    controller.addEventListener('selectend', onSelectEnd);
+    scene.add(controller);
+
+    // Try to enable hit-test if available
+    if (xrSession.enabledFeatures.includes('hit-test')) {
+        xrSession.requestHitTestSource({ space: xrReferenceSpace })
+            .then(source => { hitTestSource = source; })
+            .catch(e => console.log('Hit test not available:', e));
+    }
+
+    // Reset AR state
+    resetARState();
+}
   
   function resetARState() {
       arState.placingModel = false;
