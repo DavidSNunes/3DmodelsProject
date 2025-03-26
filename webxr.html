@@ -99,6 +99,23 @@
             cursor: pointer;
         }
 
+        .ar-tooltip {
+            position: fixed;
+            bottom: 100px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            background: rgba(0,0,0,0.6);
+            padding: 10px;
+            z-index: 1000;
+            transition: opacity 0.3s;
+            border-radius: 10px;
+            margin: 0 20px;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
         /* Small mobile devices */
         @media only screen and (max-width: 375px) {
             .ui-container {
@@ -194,5 +211,8 @@
     </div>
     <button id="exit-ar-button">Exit AR</button>
     <script src="/webxr.js"></script>
+    <div id="ar-tooltip" class="ar-tooltip" style="display:none;">
+        Tap to place, then tap and hold to move
+    </div>
 </body>
 </html>
