@@ -1,7 +1,6 @@
 // Global variables
-let scene, camera, renderer, model, controls;
+let scene, camera, renderer, model, controller, reticle;
 let xrSession = null, hitTestSource = null, xrReferenceSpace = null;
-let isARSession = false;
 
 // Initialize when DOM is loaded
 window.addEventListener('DOMContentLoaded', () => {
@@ -10,22 +9,20 @@ window.addEventListener('DOMContentLoaded', () => {
         initScene();
         checkARSupport();
     } else {
-        document.getElementById('product-desc').textContent = 'Error: Model data missing';
+        showError('Error: Model data missing');
     }
 });
 
 function updateUI() {
     document.getElementById('product-name').textContent = window.modelData.name || '3D Model';
-    document.getElementById('product-desc').textContent = window.modelData.desc || 'Interactive 3D preview';
+    document.getElementById('product-desc').textContent = window.modelData.desc || '';
     document.getElementById('product-link').href = window.modelData.link || '#';
-    document.getElementById('product-link').textContent = 'View Product Details';
 }
 
 function initScene() {
     // Scene setup
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 1.6, 3);
     scene.add(camera);
 
     // Renderer with WebXR support
@@ -51,37 +48,6 @@ function initScene() {
     renderer.setAnimationLoop(render);
 }
 
-function loadModel() {
-    const loader = new THREE.GLTFLoader();
-    const modelUrl = `https://3dmodelsproject.pages.dev/models/${window.modelData.file}`;
-    
-    loader.load(modelUrl, (gltf) => {
-        model = gltf.scene;
-        
-        // Optimal scaling calculation
-        const box = new THREE.Box3().setFromObject(model);
-        const size = box.getSize(new THREE.Vector3());
-        const scale = 1.5 / Math.max(size.x, size.y, size.z);
-        
-        model.scale.set(scale, scale, scale);
-        model.position.set(0, 0, 0);
-        scene.add(model);
-        
-        // Update loading progress
-        document.getElementById('loading-progress').style.width = '100%';
-    }, 
-    (xhr) => {
-        // Loading progress
-        const percent = (xhr.loaded / xhr.total) * 100;
-        document.getElementById('loading-progress').style.width = `${percent}%`;
-    }, 
-    (error) => {
-        console.error('Model loading error:', error);
-        document.getElementById('product-desc').textContent = 'Failed to load model';
-    });
-}
-
-// AR Support Check - Modified from working reference code
 async function checkARSupport() {
     const arButton = document.getElementById('ar-button');
     const arMessage = document.getElementById('ar-support-message');
@@ -89,7 +55,7 @@ async function checkARSupport() {
     if (!navigator.xr) {
         arButton.style.display = 'none';
         arMessage.textContent = 'WebXR not supported in this browser';
-        return;
+        return false;
     }
 
     try {
@@ -97,28 +63,26 @@ async function checkARSupport() {
         if (!supported) {
             arButton.style.display = 'none';
             arMessage.textContent = 'AR not available on this device';
-        } else {
-            arMessage.textContent = 'AR supported - Tap to start';
+            return false;
         }
+        return true;
     } catch (error) {
-        console.error('AR check failed:', error);
+        console.error('AR support check failed:', error);
         arButton.style.display = 'none';
-        arMessage.textContent = 'AR check failed';
+        arMessage.textContent = 'Could not check AR support';
+        return false;
     }
 }
 
-// AR Session Management - Adapted from working reference code
 async function startAR() {
     try {
-        if (!navigator.xr) {
-            throw new Error("WebXR not supported");
+        if (!await checkARSupport()) {
+            throw new Error("AR not supported on this device");
         }
 
-        if (xrSession) {
-            return; // Already in AR session
-        }
+        if (xrSession) return;
 
-        // First try with viewer reference space (works on iOS)
+        // First try with minimal requirements
         const sessionInit = { 
             optionalFeatures: ['dom-overlay'],
             domOverlay: { root: document.body }
@@ -127,28 +91,35 @@ async function startAR() {
         xrSession = await navigator.xr.requestSession('immersive-ar', sessionInit);
         xrSession.addEventListener('end', onXRSessionEnded);
         
-        // Try viewer reference space first (iOS compatible)
-        try {
-            xrReferenceSpace = await xrSession.requestReferenceSpace('viewer');
-        } catch (viewerError) {
-            console.log('Viewer space failed, trying local');
+        // Try all possible reference spaces
+        const referenceSpaceTypes = ['viewer', 'local', 'local-floor', 'unbounded'];
+        let lastError = null;
+        
+        for (const type of referenceSpaceTypes) {
             try {
-                xrReferenceSpace = await xrSession.requestReferenceSpace('local');
-            } catch (localError) {
-                throw new Error("Device doesn't support required AR features");
+                xrReferenceSpace = await xrSession.requestReferenceSpace(type);
+                console.log(`Using reference space: ${type}`);
+                break;
+            } catch (error) {
+                console.log(`Failed ${type} space:`, error);
+                lastError = error;
             }
         }
 
+        if (!xrReferenceSpace) {
+            throw new Error(`No supported reference space: ${lastError?.message}`);
+        }
+
         await renderer.xr.setSession(xrSession);
+        initARFeatures();
         
         // UI updates
         document.querySelector('.ui-container').style.display = 'none';
         document.getElementById('exit-ar-button').style.display = 'block';
-        isARSession = true;
 
     } catch (error) {
         console.error("AR Error:", error);
-        alert(`AR not available: ${error.message}`);
+        showError(`AR not available: ${getUserFriendlyError(error)}`);
         if (xrSession) {
             try {
                 await xrSession.end();
@@ -160,10 +131,45 @@ async function startAR() {
     }
 }
 
+function getUserFriendlyError(error) {
+    if (error.message.includes('reference space')) {
+        return "Your device doesn't support AR placement";
+    }
+    if (error.message.includes('not supported')) {
+        return "AR not available on this device";
+    }
+    return error.message;
+}
+
+function initARFeatures() {
+    // Basic reticle for placement
+    reticle = new THREE.Mesh(
+        new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+    );
+    reticle.visible = false;
+    scene.add(reticle);
+
+    // Basic controller
+    controller = renderer.xr.getController(0);
+    controller.addEventListener('selectstart', onSelectStart);
+    scene.add(controller);
+}
+
+function onSelectStart() {
+    if (reticle.visible && model) {
+        model.position.copy(reticle.position);
+        model.quaternion.copy(reticle.quaternion);
+    }
+}
+
 function onXRSessionEnded() {
     document.querySelector('.ui-container').style.display = 'block';
     document.getElementById('exit-ar-button').style.display = 'none';
-    isARSession = false;
+    
+    if (reticle) scene.remove(reticle);
+    if (controller) scene.remove(controller);
+    
     xrSession = null;
     xrReferenceSpace = null;
 }
@@ -186,9 +192,38 @@ function setupEventListeners() {
 }
 
 function render() {
-    if (!isARSession && model) {
-        // Small auto-rotation when not in AR
-        model.rotation.y += 0.005;
-    }
     renderer.render(scene, camera);
+}
+
+function loadModel() {
+    const loader = new THREE.GLTFLoader();
+    const modelUrl = `https://3dmodelsproject.pages.dev/models/${window.modelData.file}`;
+    
+    loader.load(modelUrl, (gltf) => {
+        model = gltf.scene;
+        
+        // Center and scale model
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3());
+        const scale = 1.5 / Math.max(size.x, size.y, size.z);
+        
+        model.scale.set(scale, scale, scale);
+        model.position.set(0, 0, 0);
+        scene.add(model);
+        
+        document.getElementById('loading-progress').style.width = '100%';
+    }, 
+    (xhr) => {
+        const percent = (xhr.loaded / xhr.total) * 100;
+        document.getElementById('loading-progress').style.width = `${percent}%`;
+    }, 
+    (error) => {
+        console.error('Model loading error:', error);
+        showError('Failed to load model');
+    });
+}
+
+function showError(message) {
+    document.getElementById('product-desc').textContent = message;
+    document.getElementById('ar-support-message').textContent = message;
 }
