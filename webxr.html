@@ -4,30 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>WebXR GLB Viewer</title>
+    <title>WebXR Model Viewer</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
-        #model-container { width: 100%; height: 100vh; position: relative; }
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: Arial, sans-serif; 
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #model-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
         .ui-container {
             position: absolute;
             bottom: 20px;
             left: 10px;
             right: 10px;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0, 0, 0, 0.7);
             color: white;
-            padding: 15px;
+            padding: 12px 15px;
             border-radius: 10px;
+            text-align: left;
             z-index: 10;
         }
+        .ui-container a {
+            color: #4CAF50;
+            text-decoration: none;
+            display: block;
+            margin-top: 8px;
+        }
         #ar-button, #exit-ar-button {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            margin-top: 10px;
+            display: block;
             width: 100%;
+            padding: 10px 15px;
+            font-size: 15px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
             border-radius: 5px;
             cursor: pointer;
+            margin-top: 10px;
         }
         #exit-ar-button {
             position: fixed;
@@ -35,26 +55,42 @@
             right: 20px;
             width: auto;
             display: none;
-            background: #f44336;
+            background-color: #f44336;
         }
         #ar-support-message {
             color: #ff9800;
             margin-top: 10px;
             font-size: 14px;
         }
+        #loading-bar {
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 5px;
+            margin: 8px 0;
+        }
+        #loading-progress {
+            width: 0%;
+            height: 8px;
+            background-color: #4CAF50;
+            border-radius: 5px;
+            transition: width 0.3s;
+        }
     </style>
-    <!-- Three.js from CDN -->
+    <!-- Three.js and dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
-    <div id="model-container"></div>
-    <div class="ui-container">
-        <h2 id="product-name">Loading Model...</h2>
-        <p id="product-desc"></p>
-        <button id="ar-button">Start AR</button>
-        <p id="ar-support-message"></p>
+    <div id="model-container">
+        <div class="ui-container">
+            <h2 id="product-name">Loading...</h2>
+            <p id="product-desc"></p>
+            <div id="loading-bar"><div id="loading-progress"></div></div>
+            <a id="product-link" href="#" target="_blank">View Product</a>
+            <button id="ar-button">Start AR</button>
+            <p id="ar-support-message"></p>
+        </div>
     </div>
     <button id="exit-ar-button">Exit AR</button>
     <script src="webxr.js"></script>
