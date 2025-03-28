@@ -2,15 +2,14 @@
 let scene, camera, renderer, controller, model, reticle;
 let xrSession = null, hitTestSource = null, xrReferenceSpace = null;
 let isARSession = false;
-const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-const isAndroid = /Android/i.test(navigator.userAgent);
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 // Initialize when DOM is loaded
 window.addEventListener('DOMContentLoaded', () => {
     if (window.modelData) {
         updateUI();
-        initScene();
-        checkARSupport();
+        showModelViewer(); // Always show model viewer by default
+        checkARSupport(); // Check AR support for mobile devices
     } else {
         showError('Error: Model data missing');
     }
@@ -23,7 +22,118 @@ function updateUI() {
     document.getElementById('product-link').textContent = 'View Product Details';
 }
 
-// Initialize the scene
+// AR Support Check - Only for mobile devices
+async function checkARSupport() {
+    const arButton = document.getElementById('ar-button');
+    const arMessage = document.getElementById('ar-support-message');
+    
+    // Only show AR button on mobile
+    if (!isMobile) {
+        arButton.style.display = 'none';
+        arMessage.style.display = 'none';
+        return false;
+    }
+
+    if (!navigator.xr) {
+        arButton.style.display = 'none';
+        arMessage.textContent = 'AR not supported in this browser';
+        return false;
+    }
+
+    try {
+        const supported = await navigator.xr.isSessionSupported('immersive-ar');
+        if (supported) {
+            arMessage.textContent = 'Tap to view in AR';
+            arButton.style.display = 'block';
+        } else {
+            arButton.style.display = 'none';
+            arMessage.textContent = 'AR not available on this device';
+        }
+        return supported;
+    } catch (error) {
+        console.error('AR support check failed:', error);
+        arButton.style.display = 'none';
+        arMessage.textContent = 'Could not check AR support';
+        return false;
+    }
+}
+
+// Model Viewer implementation (always shown)
+function showModelViewer() {
+    document.getElementById('model-container').style.display = 'none';
+    const modelViewer = document.getElementById('model-viewer');
+    
+    // Use USDZ for iOS, GLB for others
+    const modelFile = /iPhone|iPad|iPod/i.test(navigator.userAgent) && window.modelData.usdz ? 
+        `https://3dmodelsproject.pages.dev/models/${window.modelData.usdz}` :
+        `https://3dmodelsproject.pages.dev/models/${window.modelData.glb}`;
+    
+    modelViewer.src = modelFile;
+    modelViewer.alt = window.modelData.name;
+    document.getElementById('model-viewer-container').style.display = 'block';
+}
+
+// Start AR experience
+async function startAR() {
+    try {
+        // First try WebXR
+        if (await checkARSupport()) {
+            await startWebXR();
+            return;
+        }
+        
+        // Fallback to quick look/scene viewer
+        showQuickLookAR();
+        
+    } catch (error) {
+        console.error('AR failed:', error);
+        showQuickLookAR();
+    }
+}
+
+// WebXR implementation
+async function startWebXR() {
+    try {
+        const sessionInit = { 
+            optionalFeatures: ['dom-overlay'],
+            domOverlay: { root: document.body }
+        };
+
+        xrSession = await navigator.xr.requestSession('immersive-ar', sessionInit);
+        xrSession.addEventListener('end', onXRSessionEnded);
+        
+        // Try viewer reference space first (works on iOS)
+        try {
+            xrReferenceSpace = await xrSession.requestReferenceSpace('viewer');
+        } catch (error) {
+            console.log('Viewer space failed, trying local');
+            xrReferenceSpace = await xrSession.requestReferenceSpace('local');
+        }
+
+        // Initialize Three.js AR scene
+        initScene();
+        await renderer.xr.setSession(xrSession);
+        initARFeatures();
+        
+        document.getElementById('model-viewer-container').style.display = 'none';
+        document.getElementById('model-container').style.display = 'block';
+        document.getElementById('exit-ar-button').style.display = 'block';
+        document.getElementById('ar-tooltip').style.display = 'block';
+        isARSession = true;
+
+    } catch (error) {
+        console.error('WebXR Error:', error);
+        throw error;
+    }
+}
+
+// Quick Look/Scene Viewer fallback
+function showQuickLookAR() {
+    const modelViewer = document.getElementById('model-viewer');
+    modelViewer.activateAR();
+}
+
+// Initialize the scene (only for WebXR)
 function initScene() {
     // Scene setup
     scene = new THREE.Scene();
@@ -50,14 +160,11 @@ function initScene() {
     // Load model
     loadModel();
 
-    // Event listeners
-    setupEventListeners();
-
     // Start render loop
     renderer.setAnimationLoop(render);
 }
 
-// Load 3D model
+// Load 3D model (for WebXR)
 function loadModel() {
     const loader = new THREE.GLTFLoader();
     const modelUrl = `https://3dmodelsproject.pages.dev/models/${window.modelData.glb}`;
@@ -73,122 +180,11 @@ function loadModel() {
         model.scale.set(scale, scale, scale);
         model.position.set(0, 0, 0);
         scene.add(model);
-        
-        document.getElementById('loading-progress').style.width = '100%';
-    }, 
-    (xhr) => {
-        const percent = (xhr.loaded / xhr.total) * 100;
-        document.getElementById('loading-progress').style.width = `${percent}%`;
     }, 
     (error) => {
         console.error('Model loading error:', error);
-        showError('Failed to load model');
+        showError('Failed to load AR model');
     });
-}
-
-// AR Support Check
-async function checkARSupport() {
-    const arButton = document.getElementById('ar-button');
-    const arMessage = document.getElementById('ar-support-message');
-    
-    if (!navigator.xr) {
-        arButton.style.display = 'none';
-        arMessage.textContent = 'WebXR not supported in this browser';
-        return false;
-    }
-
-    try {
-        const supported = await navigator.xr.isSessionSupported('immersive-ar');
-        if (!supported) {
-            arMessage.textContent = 'AR not available on this device';
-        } else {
-            arMessage.textContent = 'AR supported - Tap to start';
-        }
-        return supported;
-    } catch (error) {
-        console.error('AR support check failed:', error);
-        arButton.style.display = 'none';
-        arMessage.textContent = 'Could not check AR support';
-        return false;
-    }
-}
-
-// Start AR experience
-async function startAR() {
-    try {
-        // First try WebXR
-        if (await checkARSupport()) {
-            await startWebXR();
-            return;
-        }
-        
-        // Fallback to model-viewer
-        showModelViewer();
-        
-    } catch (error) {
-        console.error('AR failed:', error);
-        showModelViewer();
-    }
-}
-
-// WebXR implementation
-async function startWebXR() {
-    try {
-        const sessionInit = { 
-            optionalFeatures: ['dom-overlay'],
-            domOverlay: { root: document.body }
-        };
-
-        xrSession = await navigator.xr.requestSession('immersive-ar', sessionInit);
-        xrSession.addEventListener('end', onXRSessionEnded);
-        
-        // Try viewer reference space first (works on iOS)
-        try {
-            xrReferenceSpace = await xrSession.requestReferenceSpace('viewer');
-        } catch (error) {
-            console.log('Viewer space failed, trying local');
-            xrReferenceSpace = await xrSession.requestReferenceSpace('local');
-        }
-
-        await renderer.xr.setSession(xrSession);
-        initARFeatures();
-        
-        document.querySelector('.ui-container').style.display = 'none';
-        document.getElementById('exit-ar-button').style.display = 'block';
-        document.getElementById('ar-tooltip').style.display = 'block';
-        isARSession = true;
-
-    } catch (error) {
-        console.error('WebXR Error:', error);
-        throw error; // Will be caught by startAR()
-    }
-}
-
-// Model Viewer fallback
-function showModelViewer() {
-    console.log('Falling back to model-viewer');
-    document.getElementById('model-container').style.display = 'none';
-    const modelViewer = document.getElementById('model-viewer');
-    
-    // Use USDZ for iOS, GLB for Android
-    const modelFile = isIOS && window.modelData.usdz ? 
-        `https://3dmodelsproject.pages.dev/models/${window.modelData.usdz}` :
-        `https://3dmodelsproject.pages.dev/models/${window.modelData.glb}`;
-    
-    modelViewer.src = modelFile;
-    document.getElementById('model-viewer-container').style.display = 'block';
-    
-    // Hide AR button since we're using fallback
-    document.getElementById('ar-button').style.display = 'none';
-}
-
-// Basic 3D viewer fallback
-function showBasicViewer() {
-    document.getElementById('model-container').style.display = 'none';
-    document.getElementById('model-viewer-container').style.display = 'none';
-    document.getElementById('fallback-message').style.display = 'block';
-    
-    // Implement basic Three.js viewer here if needed
 }
 
 // Initialize AR features
@@ -211,7 +207,8 @@ function initARFeatures() {
 
 // Handle XR session end
 function onXRSessionEnded() {
-    document.querySelector('.ui-container').style.display = 'block';
+    document.getElementById('model-viewer-container').style.display = 'block';
+    document.getElementById('model-container').style.display = 'none';
     document.getElementById('exit-ar-button').style.display = 'none';
     document.getElementById('ar-tooltip').style.display = 'none';
     
@@ -238,12 +235,15 @@ function onSelectEnd() {
 function setupEventListeners() {
     document.getElementById('ar-button').addEventListener('click', startAR);
     document.getElementById('exit-ar-button').addEventListener('click', endAR);
-    document.getElementById('basic-view').addEventListener('click', showBasicViewer);
     
     window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        if (camera) {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        }
+        if (renderer) {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
     });
 }
 

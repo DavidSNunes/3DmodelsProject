@@ -10,40 +10,31 @@
     <style>
         body { 
             margin: 0; 
-            overflow: hidden; 
             font-family: Arial, sans-serif; 
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            min-height: 100vh;
         }
         #model-container {
+            display: none;
             flex: 1;
             position: relative;
             overflow: hidden;
         }
         #model-viewer-container {
-            display: none;
             width: 100%;
-            height: 100vh;
+            height: 70vh;
+        }
+        model-viewer {
+            width: 100%;
+            height: 100%;
         }
         .ui-container {
-            position: absolute;
-            bottom: 50px;
-            left: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
             padding: 12px 15px;
-            border-radius: 10px;
             text-align: left;
-            z-index: 10;
-            max-width: calc(100% - 20px);
+            max-width: 100%;
             font-size: 14px;
-            max-height: 50vh;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
             box-sizing: border-box;
-            box-shadow: 0 -5px 10px rgba(0,0,0,0.2);
         }
         .ui-container a {
             color: #4CAF50;
@@ -84,12 +75,6 @@
             font-size: 14px;
             line-height: 1.4;
             margin: 0 0 8px 0;
-            max-height: 4.2em;
-            overflow: hidden;
-            transition: max-height 0.3s;
-        }
-        #product-desc.expanded {
-            max-height: none;
         }
         #exit-ar-button {
             position: fixed;
@@ -139,7 +124,6 @@
         @media only screen and (max-width: 375px) {
             .ui-container {
                 padding: 10px 12px;
-                max-height: 55vh;
                 font-size: 13px;
             }
             #product-name {
@@ -147,7 +131,6 @@
             }
             #product-desc {
                 font-size: 13px;
-                max-height: 3.6em;
             }
             .ui-container button {
                 padding: 8px 12px;
@@ -159,21 +142,9 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/pmrem/PMREMGenerator.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/webxr/XRControllerModelFactory.js"></script>
 </head>
 <body>
-    <div id="model-container">
-        <div class="ui-container">
-            <h2 id="product-name">Loading...</h2>
-            <p id="product-desc">Please wait while we load your model.</p>
-            <div id="loading-bar"><div id="loading-progress"></div></div>
-            <a id="product-link" href="#" target="_blank">View Product</a>
-            <button id="ar-button">Start AR</button>
-            <p id="ar-support-message"></p>
-        </div>
-    </div>
-    
     <div id="model-viewer-container">
         <model-viewer
             id="model-viewer"
@@ -186,9 +157,17 @@
         </model-viewer>
     </div>
     
-    <div id="fallback-message">
-        <p>Advanced AR features not available</p>
-        <button id="basic-view">View in Basic 3D</button>
+    <div class="ui-container">
+        <h2 id="product-name">Loading...</h2>
+        <p id="product-desc">Please wait while we load your model.</p>
+        <div id="loading-bar"><div id="loading-progress"></div></div>
+        <a id="product-link" href="#" target="_blank">View Product</a>
+        <button id="ar-button" style="display: none;">View in AR</button>
+        <p id="ar-support-message"></p>
+    </div>
+    
+    <div id="model-container">
+        <!-- Three.js content will go here for AR mode -->
     </div>
     
     <button id="exit-ar-button">Exit AR</button>
