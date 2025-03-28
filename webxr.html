@@ -17,9 +17,8 @@
         }
         #model-container {
             display: none;
-            flex: 1;
-            position: relative;
-            overflow: hidden;
+            width: 100%;
+            height: 70vh;
         }
         #model-viewer-container {
             width: 100%;
@@ -30,10 +29,10 @@
             height: 100%;
         }
         .ui-container {
-            padding: 12px 15px;
-            text-align: left;
-            max-width: 100%;
-            font-size: 14px;
+            padding: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
             box-sizing: border-box;
         }
         .ui-container a {
@@ -43,38 +42,24 @@
             margin-top: 8px;
         }
         .ui-container button {
-            display: block;
             width: 100%;
-            padding: 10px 15px;
-            font-size: 15px;
+            padding: 12px 15px;
+            font-size: 16px;
             background-color: #4CAF50;
             color: #fff;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            margin-top: 10px;
-        }
-        #loading-bar {
-            width: 100%;
-            background-color: #ddd;
-            border-radius: 5px;
-            margin: 8px 0;
-        }
-        #loading-progress {
-            width: 0%;
-            height: 8px;
-            background-color: #4CAF50;
-            border-radius: 5px;
-            transition: width 0.3s;
+            margin-top: 15px;
         }
         #product-name {
-            font-size: 18px;
-            margin: 0 0 6px 0;
+            font-size: 20px;
+            margin: 0 0 8px 0;
         }
         #product-desc {
-            font-size: 14px;
-            line-height: 1.4;
-            margin: 0 0 8px 0;
+            font-size: 16px;
+            line-height: 1.5;
+            margin: 0 0 12px 0;
         }
         #exit-ar-button {
             position: fixed;
@@ -99,49 +84,27 @@
             background: rgba(0,0,0,0.6);
             padding: 10px;
             z-index: 1000;
-            transition: opacity 0.3s;
             border-radius: 10px;
             margin: 0 20px;
             backdrop-filter: blur(5px);
             -webkit-backdrop-filter: blur(5px);
             display: none;
         }
-        #fallback-message {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            z-index: 1000;
-        }
 
-        /* Small mobile devices */
-        @media only screen and (max-width: 375px) {
+        @media only screen and (max-width: 600px) {
             .ui-container {
-                padding: 10px 12px;
-                font-size: 13px;
+                padding: 12px;
             }
             #product-name {
-                font-size: 16px;
+                font-size: 18px;
             }
             #product-desc {
-                font-size: 13px;
-            }
-            .ui-container button {
-                padding: 8px 12px;
                 font-size: 14px;
             }
         }
     </style>
-    <!-- Three.js and dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146/examples/js/webxr/XRControllerModelFactory.js"></script>
 </head>
 <body>
@@ -160,18 +123,16 @@
     <div class="ui-container">
         <h2 id="product-name">Loading...</h2>
         <p id="product-desc">Please wait while we load your model.</p>
-        <div id="loading-bar"><div id="loading-progress"></div></div>
-        <a id="product-link" href="#" target="_blank">View Product</a>
+        <a id="product-link" href="#" target="_blank">View Product Details</a>
         <button id="ar-button" style="display: none;">View in AR</button>
-        <p id="ar-support-message"></p>
     </div>
     
     <div id="model-container">
-        <!-- Three.js content will go here for AR mode -->
+        <!-- Three.js content will go here for WebXR AR mode -->
     </div>
     
     <button id="exit-ar-button">Exit AR</button>
-    <div id="ar-tooltip" class="ar-tooltip">Tap to place, then tap and hold to move</div>
+    <div id="ar-tooltip" class="ar-tooltip">Tap to place the model</div>
     
     <script src="/webxr.js"></script>
 </body>

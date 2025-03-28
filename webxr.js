@@ -8,8 +8,9 @@ const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 window.addEventListener('DOMContentLoaded', () => {
     if (window.modelData) {
         updateUI();
-        showModelViewer(); // Always show model viewer by default
-        checkARSupport(); // Check AR support for mobile devices
+        initModelViewer(); // Initialize model viewer (non-AR mode)
+        setupEventListeners();
+        checkARSupport(); // Check if we should show AR button
     } else {
         showError('Error: Model data missing');
     }
@@ -22,45 +23,8 @@ function updateUI() {
     document.getElementById('product-link').textContent = 'View Product Details';
 }
 
-// AR Support Check - Only for mobile devices
-async function checkARSupport() {
-    const arButton = document.getElementById('ar-button');
-    const arMessage = document.getElementById('ar-support-message');
-    
-    // Only show AR button on mobile
-    if (!isMobile) {
-        arButton.style.display = 'none';
-        arMessage.style.display = 'none';
-        return false;
-    }
-
-    if (!navigator.xr) {
-        arButton.style.display = 'none';
-        arMessage.textContent = 'AR not supported in this browser';
-        return false;
-    }
-
-    try {
-        const supported = await navigator.xr.isSessionSupported('immersive-ar');
-        if (supported) {
-            arMessage.textContent = 'Tap to view in AR';
-            arButton.style.display = 'block';
-        } else {
-            arButton.style.display = 'none';
-            arMessage.textContent = 'AR not available on this device';
-        }
-        return supported;
-    } catch (error) {
-        console.error('AR support check failed:', error);
-        arButton.style.display = 'none';
-        arMessage.textContent = 'Could not check AR support';
-        return false;
-    }
-}
-
-// Model Viewer implementation (always shown)
-function showModelViewer() {
-    document.getElementById('model-container').style.display = 'none';
+// Initialize model viewer (non-AR mode)
+function initModelViewer() {
     const modelViewer = document.getElementById('model-viewer');
     
     // Use USDZ for iOS, GLB for others
@@ -70,25 +34,51 @@ function showModelViewer() {
     
     modelViewer.src = modelFile;
     modelViewer.alt = window.modelData.name;
-    document.getElementById('model-viewer-container').style.display = 'block';
+    
+    // Hide model-viewer's built-in AR button
+    modelViewer.addEventListener('load', () => {
+        const arButton = modelViewer.shadowRoot.querySelector('.ar-button');
+        if (arButton) arButton.style.display = 'none';
+    });
+}
+
+// Check AR support and show/hide our custom AR button
+async function checkARSupport() {
+    const arButton = document.getElementById('ar-button');
+    
+    // Only show AR button on mobile
+    if (!isMobile) {
+        arButton.style.display = 'none';
+        return false;
+    }
+
+    // Show AR button if either WebXR or model-viewer AR is supported
+    arButton.style.display = 'block';
+    return true;
 }
 
 // Start AR experience
 async function startAR() {
     try {
         // First try WebXR
-        if (await checkARSupport()) {
+        if (navigator.xr && await navigator.xr.isSessionSupported('immersive-ar')) {
             await startWebXR();
             return;
         }
         
-        // Fallback to quick look/scene viewer
-        showQuickLookAR();
+        // Fallback to model-viewer's AR
+        activateModelViewerAR();
         
     } catch (error) {
         console.error('AR failed:', error);
-        showQuickLookAR();
+        activateModelViewerAR();
     }
+}
+
+// Activate model-viewer's built-in AR
+function activateModelViewerAR() {
+    const modelViewer = document.getElementById('model-viewer');
+    modelViewer.activateAR();
 }
 
 // WebXR implementation
@@ -125,12 +115,6 @@ async function startWebXR() {
         console.error('WebXR Error:', error);
         throw error;
     }
-}
-
-// Quick Look/Scene Viewer fallback
-function showQuickLookAR() {
-    const modelViewer = document.getElementById('model-viewer');
-    modelViewer.activateAR();
 }
 
 // Initialize the scene (only for WebXR)
@@ -255,14 +239,4 @@ function endAR() {
 
 function showError(message) {
     document.getElementById('product-desc').textContent = message;
-    document.getElementById('ar-support-message').textContent = message;
-}
-
-// Render loop
-function render() {
-    if (!isARSession && model) {
-        // Small auto-rotation when not in AR
-        model.rotation.y += 0.005;
-    }
-    renderer.render(scene, camera);
 }
